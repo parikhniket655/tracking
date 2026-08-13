@@ -19,6 +19,24 @@ const WazirStore = (() => {
   let emailLogs = load('email_logs', DEFAULT_EMAIL_LOGS);
   let currentUser = localStorage.getItem('wazir_current_user') || 'junior_animesh';
 
+  // Check if we have the old seed data in LocalStorage (contains junior_rahil)
+  // If so, force a migration/reset to the new 10 juniors list
+  if (users.some(u => u.id === 'junior_rahil')) {
+    localStorage.removeItem('wazir_users');
+    localStorage.removeItem('wazir_tasks');
+    localStorage.removeItem('wazir_requests');
+    localStorage.removeItem('wazir_notifications');
+    localStorage.removeItem('wazir_email_logs');
+    localStorage.removeItem('wazir_current_user');
+    
+    users = DEFAULT_USERS;
+    tasks = DEFAULT_TASKS;
+    requests = DEFAULT_REQUESTS;
+    notifications = DEFAULT_NOTIFICATIONS;
+    emailLogs = DEFAULT_EMAIL_LOGS;
+    currentUser = 'junior_animesh';
+  }
+
   // Seed on first run
   if (!localStorage.getItem('wazir_users')) {
     save('users', users);
