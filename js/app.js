@@ -221,6 +221,19 @@ const WazirApp = (() => {
 
   // Switch Users Trigger
   const switchUser = (userId) => {
+    const currentUser = WazirStore.getCurrentUser();
+    
+    // Check password if switching to Wazir Senior view
+    if (userId === 'admin_senior') {
+      const password = prompt("Enter Wazir Senior password to access Admin panel:");
+      if (password !== 'STWazir') {
+        showToast("Access Denied: Incorrect password.", "danger");
+        // Revert dropdown selection to previous user
+        document.getElementById('user-role-select').value = currentUser.id;
+        return;
+      }
+    }
+
     WazirStore.setCurrentUser(userId);
     updateThemeClass();
     populateUserSwitcher(); // rebuild label focus
