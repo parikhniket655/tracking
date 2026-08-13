@@ -17,7 +17,7 @@ const WazirStore = (() => {
   let requests = load('requests', DEFAULT_REQUESTS);
   let notifications = load('notifications', DEFAULT_NOTIFICATIONS);
   let emailLogs = load('email_logs', DEFAULT_EMAIL_LOGS);
-  let currentUser = localStorage.getItem('wazir_current_user') || 'junior_rahil';
+  let currentUser = localStorage.getItem('wazir_current_user') || 'junior_animesh';
 
   // Seed on first run
   if (!localStorage.getItem('wazir_users')) {

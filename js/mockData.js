@@ -3,36 +3,84 @@
 
 const DEFAULT_USERS = [
   {
-    id: "junior_rahil",
-    name: "Rahil Sharma",
-    email: "rahil@wazir.in",
+    id: "junior_animesh",
+    name: "Animesh",
+    email: "animesh@wazir.in",
     role: "junior",
     vertical: "PR",
-    avatar: "RS"
+    avatar: "AN"
   },
   {
-    id: "junior_anya",
-    name: "Anya Mehta",
-    email: "anya@wazir.in",
+    id: "junior_avi",
+    name: "Avi",
+    email: "avi@wazir.in",
     role: "junior",
     vertical: "Events",
-    avatar: "AM"
+    avatar: "AV"
   },
   {
-    id: "junior_kabir",
-    name: "Kabir Malhotra",
-    email: "kabir@wazir.in",
+    id: "junior_nandini",
+    name: "Nandini",
+    email: "nandini@wazir.in",
     role: "junior",
     vertical: "Editorials",
-    avatar: "KM"
+    avatar: "NA"
   },
   {
-    id: "junior_samaira",
-    name: "Samaira Sen",
-    email: "samaira@wazir.in",
+    id: "junior_ishika",
+    name: "Ishika",
+    email: "ishika@wazir.in",
     role: "junior",
     vertical: "APEX",
-    avatar: "SS"
+    avatar: "IS"
+  },
+  {
+    id: "junior_akruti",
+    name: "Akruti",
+    email: "akruti@wazir.in",
+    role: "junior",
+    vertical: "ER",
+    avatar: "AK"
+  },
+  {
+    id: "junior_vishaka",
+    name: "Vishaka",
+    email: "vishaka@wazir.in",
+    role: "junior",
+    vertical: "CaseBook",
+    avatar: "VI"
+  },
+  {
+    id: "junior_harshvardhan",
+    name: "Harshvardhan",
+    email: "harshvardhan@wazir.in",
+    role: "junior",
+    vertical: "PR",
+    avatar: "HV"
+  },
+  {
+    id: "junior_devanshi",
+    name: "Devanshi",
+    email: "devanshi@wazir.in",
+    role: "junior",
+    vertical: "Events",
+    avatar: "DE"
+  },
+  {
+    id: "junior_simarpreet",
+    name: "Simarpreet",
+    email: "simarpreet@wazir.in",
+    role: "junior",
+    vertical: "Editorials",
+    avatar: "SI"
+  },
+  {
+    id: "junior_somansha",
+    name: "Somansha",
+    email: "somansha@wazir.in",
+    role: "junior",
+    vertical: "APEX",
+    avatar: "SO"
   },
   {
     id: "admin_senior",
@@ -53,7 +101,7 @@ const DEFAULT_TASKS = [
     priority: "High",
     deadline: "2026-08-15T18:00:00",
     assignedBy: "Wazir Senior",
-    juniorId: "junior_anya",
+    juniorId: "junior_avi",
     status: "In Progress",
     attachments: [
       { name: "Draft_COTY_Pitch.pdf", url: "#" },
@@ -65,14 +113,14 @@ const DEFAULT_TASKS = [
       {
         date: "2026-08-10T10:00:00",
         type: "create",
-        details: "Task created and assigned to Anya Mehta with deadline 15 August 2026.",
+        details: "Task created and assigned to Avi with deadline 15 August 2026.",
         user: "Wazir Senior"
       },
       {
         date: "2026-08-12T14:30:00",
         type: "status_change",
         details: "Status updated from 'Not Started' to 'In Progress'.",
-        user: "Anya Mehta"
+        user: "Avi"
       }
     ]
   },
@@ -84,7 +132,7 @@ const DEFAULT_TASKS = [
     priority: "Medium",
     deadline: "2026-08-14T14:00:00",
     assignedBy: "Wazir Senior",
-    juniorId: "junior_rahil",
+    juniorId: "junior_animesh",
     status: "Under Review",
     attachments: [],
     notes: "Must be approved by senior lead before distributing to media partners.",
@@ -93,14 +141,14 @@ const DEFAULT_TASKS = [
       {
         date: "2026-08-11T09:30:00",
         type: "create",
-        details: "Task created and assigned to Rahil Sharma.",
+        details: "Task created and assigned to Animesh.",
         user: "Wazir Senior"
       },
       {
         date: "2026-08-13T17:00:00",
         type: "status_change",
         details: "Status updated from 'In Progress' to 'Under Review'.",
-        user: "Rahil Sharma"
+        user: "Animesh"
       }
     ]
   },
@@ -112,7 +160,7 @@ const DEFAULT_TASKS = [
     priority: "Low",
     deadline: "2026-08-19T23:59:00",
     assignedBy: "Wazir Senior",
-    juniorId: "junior_kabir",
+    juniorId: "junior_vishaka",
     status: "Not Started",
     attachments: [],
     notes: "Review past templates for financial reporting structure.",
@@ -121,7 +169,7 @@ const DEFAULT_TASKS = [
       {
         date: "2026-08-13T16:00:00",
         type: "create",
-        details: "Task created and assigned to Kabir Malhotra.",
+        details: "Task created and assigned to Vishaka.",
         user: "Wazir Senior"
       }
     ]
@@ -134,7 +182,7 @@ const DEFAULT_TASKS = [
     priority: "Medium",
     deadline: "2026-08-13T12:00:00", // Overdue!
     assignedBy: "Wazir Senior",
-    juniorId: "junior_kabir",
+    juniorId: "junior_nandini",
     status: "In Progress",
     attachments: [],
     notes: "3 drafts are still pending review.",
@@ -143,14 +191,14 @@ const DEFAULT_TASKS = [
       {
         date: "2026-08-08T11:00:00",
         type: "create",
-        details: "Task created and assigned to Kabir Malhotra.",
+        details: "Task created and assigned to Nandini.",
         user: "Wazir Senior"
       },
       {
         date: "2026-08-09T10:00:00",
         type: "status_change",
         details: "Status updated to In Progress.",
-        user: "Kabir Malhotra"
+        user: "Nandini"
       }
     ]
   },
@@ -162,7 +210,7 @@ const DEFAULT_TASKS = [
     priority: "High",
     deadline: "2026-08-11T17:00:00", // Was due in the past, but completed.
     assignedBy: "Wazir Senior",
-    juniorId: "junior_samaira",
+    juniorId: "junior_ishika",
     status: "Completed",
     attachments: [
       { name: "APEX_Icons_Export.zip", url: "#" }
@@ -180,7 +228,7 @@ const DEFAULT_TASKS = [
         date: "2026-08-11T15:30:00",
         type: "status_change",
         details: "Status updated to Completed.",
-        user: "Samaira Sen"
+        user: "Ishika"
       }
     ]
   },
@@ -192,7 +240,7 @@ const DEFAULT_TASKS = [
     priority: "Medium",
     deadline: "2026-08-18T16:00:00", // Awaiting approval
     assignedBy: "Wazir Senior",
-    juniorId: "junior_anya",
+    juniorId: "junior_avi",
     status: "In Progress",
     attachments: [],
     notes: "Requires at least 3 panel confirmations.",
@@ -208,7 +256,7 @@ const DEFAULT_TASKS = [
         date: "2026-08-14T01:00:00",
         type: "deadline_change_request",
         details: "Requested deadline extension to 2026-08-24T16:00:00. Reason: Speaker requested rescheduling due to travel conflict.",
-        user: "Anya Mehta"
+        user: "Avi"
       }
     ]
   }
@@ -218,7 +266,7 @@ const DEFAULT_REQUESTS = [
   {
     id: "req_1",
     taskId: "task_6",
-    juniorId: "junior_anya",
+    juniorId: "junior_avi",
     currentDeadline: "2026-08-18T16:00:00",
     requestedDeadline: "2026-08-24T16:00:00",
     reason: "Key speaker had an urgent travel conflict and requested that we move the panel to the following week. This is necessary to maintain the panel lineup.",
@@ -233,14 +281,14 @@ const DEFAULT_NOTIFICATIONS = [
     id: "notif_1",
     userId: "admin_senior",
     title: "Deadline Change Requested",
-    message: "Anya Mehta requested a deadline change for 'Schedule ER Speaker Panel' to 24 August 2026.",
+    message: "Avi requested a deadline change for 'Schedule ER Speaker Panel' to 24 August 2026.",
     timestamp: "2026-08-14T01:00:00",
     read: false,
     type: "request_submitted"
   },
   {
     id: "notif_2",
-    userId: "junior_anya",
+    userId: "junior_avi",
     title: "Task Assigned",
     message: "Wazir Senior assigned you a new task: 'Finalize COTY Sponsorship Deck'.",
     timestamp: "2026-08-10T10:00:00",
@@ -249,7 +297,7 @@ const DEFAULT_NOTIFICATIONS = [
   },
   {
     id: "notif_3",
-    userId: "junior_kabir",
+    userId: "junior_nandini",
     title: "Task Overdue Notice",
     message: "Task 'Audit Editorial Submissions Q3' is overdue! Deadline was 13 August, 12:00 PM.",
     timestamp: "2026-08-13T12:05:00",
@@ -261,14 +309,14 @@ const DEFAULT_NOTIFICATIONS = [
 const DEFAULT_EMAIL_LOGS = [
   {
     id: "email_1",
-    to: "kabir@wazir.in",
+    to: "nandini@wazir.in",
     subject: "Reminder: Task Due Tomorrow - Audit Editorial Submissions Q3",
     body: `
       <div class="email-rendered-card">
         <div class="email-header-banner">Wazir Juniors</div>
         <div class="email-content-box">
           <div class="email-content-title">Reminder: Task Due Tomorrow</div>
-          <p>Hi Kabir Malhotra,</p>
+          <p>Hi Nandini,</p>
           <br>
           <p>Your task <strong>"Audit Editorial Submissions Q3"</strong> is due tomorrow.</p>
           <br>
