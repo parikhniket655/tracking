@@ -1750,51 +1750,64 @@ const WazirApp = (() => {
     if (!grid) return;
     grid.innerHTML = '';
 
-    // Weekday headers
-    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    weekdays.forEach(w => {
-      const header = document.createElement('div');
-      header.className = 'calendar-header-cell';
-      header.textContent = w;
-      if (w === 'Sun') {
-        header.style.color = 'var(--text-muted)';
-      }
-      grid.appendChild(header);
+    // Weekdays row
+    const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    daysOfWeek.forEach(day => {
+      const el = document.createElement('div');
+      el.className = 'calendar-weekday';
+      el.textContent = day;
+      grid.appendChild(el);
     });
 
-    // First day of month and total days
-    const firstDay = new Date(adminAttCalYear, adminAttCalMonth, 1).getDay();
-    const totalDays = new Date(adminAttCalYear, adminAttCalMonth + 1, 0).getDate();
-
-    // Empty cells before first day
-    for (let i = 0; i < firstDay; i++) {
-      const empty = document.createElement('div');
-      empty.className = 'calendar-day empty';
-      grid.appendChild(empty);
-    }
+    // Paging metrics
+    const firstDayIndex = new Date(adminAttCalYear, adminAttCalMonth, 1).getDay();
+    const lastDay = new Date(adminAttCalYear, adminAttCalMonth + 1, 0).getDate();
+    const prevLastDay = new Date(adminAttCalYear, adminAttCalMonth, 0).getDate();
+    const totalCells = 42; // standard grid layout
 
     const juniors = WazirStore.getJuniors();
 
-    // Render cells for each day
-    for (let day = 1; day <= totalDays; day++) {
+    // Render 42 cells
+    for (let i = 1; i <= totalCells; i++) {
       const cell = document.createElement('div');
       cell.className = 'calendar-day';
-      
-      const d = new Date(adminAttCalYear, adminAttCalMonth, day);
-      const isSunday = d.getDay() === 0;
-      
-      const dateStr = `${adminAttCalYear}-${(adminAttCalMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-      
-      let cellHTML = `<div class="day-number">${day}</div>`;
-      
-      if (isSunday) {
-        cell.classList.add('holiday-sunday');
-        cellHTML += `<div class="holiday-label">SUNDAY</div><div class="holiday-subtext">Holiday</div>`;
+
+      let dayNum;
+      let targetDate;
+      let isOtherMonth = false;
+
+      if (i <= firstDayIndex) {
+        cell.classList.add('other-month');
+        dayNum = prevLastDay - firstDayIndex + i;
+        targetDate = new Date(adminAttCalYear, adminAttCalMonth - 1, dayNum);
+        isOtherMonth = true;
+      } else if (i > firstDayIndex + lastDay) {
+        cell.classList.add('other-month');
+        dayNum = i - (firstDayIndex + lastDay);
+        targetDate = new Date(adminAttCalYear, adminAttCalMonth + 1, dayNum);
+        isOtherMonth = true;
       } else {
+        dayNum = i - firstDayIndex;
+        targetDate = new Date(adminAttCalYear, adminAttCalMonth, dayNum);
+      }
+
+      const isSunday = targetDate.getDay() === 0;
+      const dateStr = `${targetDate.getFullYear()}-${(targetDate.getMonth() + 1).toString().padStart(2, '0')}-${targetDate.getDate().toString().padStart(2, '0')}`;
+
+      let cellHTML = `<div class="day-number" style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">${dayNum}</div>`;
+
+      if (isSunday) {
+        cell.style.pointerEvents = 'none';
+        cell.style.opacity = '0.35';
+        cell.style.background = 'transparent';
+        cell.style.borderStyle = 'dashed';
+        cellHTML += `<div style="font-size:0.65rem; color:var(--text-muted); font-weight:700; margin-top:2px;">SUNDAY</div>`;
+      } else {
+        // Attendance logs for this date
         const logs = WazirStore.getAttendanceLogs(dateStr);
         let presentCount = 0;
         const absentees = [];
-        
+
         juniors.forEach(j => {
           const log = logs.find(l => l.juniorId === j.id);
           if (log && (log.status === 'Present' || log.status === 'Late')) {
@@ -1804,16 +1817,22 @@ const WazirApp = (() => {
           }
         });
 
+        // Set content
         cellHTML += `
-          <div class="attendance-present-stat">🟢 ${presentCount} Present</div>
-          <div class="attendance-absent-list" title="${absentees.join(', ')}">
-            ${absentees.length > 0 ? `🔴 ${absentees.join(', ')}` : '🎉 No Absentees'}
+          <div style="font-size:0.75rem; font-weight:700; color:var(--color-priority-low); margin-top:2px;">🟢 ${presentCount} Present</div>
+          <div style="font-size:0.65rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;" title="${absentees.join(', ')}">
+            ${absentees.length > 0 ? `🔴 ${absentees.join(', ')}` : '🎉 Full Team'}
           </div>
         `;
-        
-        cell.onclick = () => WazirApp.openEditAttendanceDialog(dateStr);
+
+        if (!isOtherMonth) {
+          cell.onclick = () => WazirApp.openEditAttendanceDialog(dateStr);
+        } else {
+          cell.style.opacity = '0.5';
+          cell.style.pointerEvents = 'none';
+        }
       }
-      
+
       cell.innerHTML = cellHTML;
       grid.appendChild(cell);
     }
