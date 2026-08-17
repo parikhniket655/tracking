@@ -1689,7 +1689,12 @@ const WazirApp = (() => {
       const log = logs.find(l => l.juniorId === j.id);
       const logStatus = log ? log.status : 'Absent (Unmarked)';
       const badgeClass = logStatus === 'Present' ? 'badge-success' : logStatus === 'Late' ? 'badge-warning' : 'badge-danger';
-      const checkInLabel = log && log.checkInTime ? WazirStore.formatFriendlyDate(log.checkInTime).split(',')[1].trim() : '—';
+      let checkInLabel = '—';
+      if (log && log.checkInTime) {
+        const formatted = WazirStore.formatFriendlyDate(log.checkInTime);
+        const parts = formatted.split(',');
+        checkInLabel = parts.length > 1 ? parts[1].trim() : formatted;
+      }
       
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -1773,7 +1778,12 @@ const WazirApp = (() => {
       const log = logs.find(l => l.juniorId === j.id);
       const logStatus = log ? log.status : 'Absent (Unmarked)';
       const badgeClass = logStatus === 'Present' ? 'badge-success' : logStatus === 'Late' ? 'badge-warning' : 'badge-danger';
-      const checkInLabel = log && log.checkInTime ? WazirStore.formatFriendlyDate(log.checkInTime).split(',')[1].trim() : '—';
+      let checkInLabel = '—';
+      if (log && log.checkInTime) {
+        const formatted = WazirStore.formatFriendlyDate(log.checkInTime);
+        const parts = formatted.split(',');
+        checkInLabel = parts.length > 1 ? parts[1].trim() : formatted;
+      }
       
       const tr = document.createElement('tr');
       tr.innerHTML = `

@@ -68,8 +68,8 @@ const WazirStore = (() => {
       // Test query to check if users table exists and fetch
       const { data: usersData, error: usersErr } = await supabase.from('users').select('*');
       if (usersErr) throw usersErr;
-      
-      users = usersData;
+
+      users = (usersData && usersData.length > 0) ? usersData : DEFAULT_USERS;
       usingSupabase = true;
 
       // Fetch remainder tables
