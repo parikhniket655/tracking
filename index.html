@@ -117,7 +117,7 @@
         <!-- Footer reset/brand -->
         <div style="border-top: 1px solid var(--border-color); padding-top: 12px; font-size: 0.75rem; color: var(--text-muted);">
           <span>Wazir Admin Console v1.0</span>
-          <button class="btn btn-secondary btn-sm" style="width:100%; margin-top:10px; font-size:0.7rem;" onclick="WazirStore.resetStore()">Reset Data</button>
+          <button class="btn btn-secondary btn-sm" id="sidebar-reset-btn" style="width:100%; margin-top:10px; font-size:0.7rem;" onclick="WazirStore.resetStore()">Reset Data</button>
         </div>
       </aside>
 
@@ -390,7 +390,10 @@
               </div>
 
               <div style="margin-top: 30px;">
-                <button class="btn btn-secondary" onclick="WazirStore.resetStore()" style="width: 100%; padding: 10px; font-size: 0.8rem; margin-bottom: 12px;">Reset Cache Data</button>
+                <!-- Workspace Switcher Button -->
+                <button class="btn btn-primary" id="settings-switch-role-btn" onclick="WazirApp.handleSettingsRoleSwitch()" style="width: 100%; padding: 12px; font-weight: 700; margin-bottom: 12px;">Switch to Senior Workspace</button>
+                
+                <button class="btn btn-secondary" id="settings-reset-btn" onclick="WazirStore.resetStore()" style="width: 100%; padding: 10px; font-size: 0.8rem; margin-bottom: 12px;">Reset Cache Data</button>
                 <button class="btn btn-danger" onclick="WazirApp.handleLogout()" style="width: 100%; padding: 12px; font-weight: 700;">Log Out</button>
               </div>
             </div>

@@ -155,6 +155,12 @@ const WazirApp = (() => {
       document.getElementById('mob-admin-attendance').style.display = 'none';
       document.getElementById('mob-admin-settings').style.display = 'none';
     }
+
+    // Toggle sidebar reset button (only seniors can reset data)
+    const resetBtn = document.getElementById('sidebar-reset-btn');
+    if (resetBtn) {
+      resetBtn.style.display = activeRole === 'admin' ? 'block' : 'none';
+    }
   };
 
   // Nav items highlight
@@ -1569,6 +1575,47 @@ const WazirApp = (() => {
     }
     if (settingsEmail) settingsEmail.textContent = user.email;
     if (settingsVertical) settingsVertical.textContent = user.vertical;
+
+    // Toggle reset cache button (only seniors can reset data)
+    const settingsResetBtn = document.getElementById('settings-reset-btn');
+    if (settingsResetBtn) {
+      settingsResetBtn.style.display = user.role === 'admin' ? 'block' : 'none';
+    }
+
+    // Toggle workspace switcher text
+    const switchBtn = document.getElementById('settings-switch-role-btn');
+    if (switchBtn) {
+      if (user.role === 'admin') {
+        switchBtn.textContent = "Switch to Junior Workspace";
+        switchBtn.className = "btn btn-secondary";
+      } else {
+        switchBtn.textContent = "Switch to Senior Workspace";
+        switchBtn.className = "btn btn-primary";
+      }
+    }
+  };
+
+  const handleSettingsRoleSwitch = () => {
+    const currentRole = WazirStore.getActiveRole();
+    if (currentRole === 'junior') {
+      const password = prompt("Enter Senior password to switch workspace:");
+      if (password === 'STWazir') {
+        WazirStore.logIn('admin');
+        showToast("Switched to Senior Workspace.", "success");
+        window.location.hash = '#/admin-overview';
+        updateThemeClass();
+        handleRouting();
+      } else if (password !== null) {
+        showToast("Incorrect password. Access denied.", "danger");
+      }
+    } else {
+      const juniorId = WazirStore.getSelectedJuniorId() || 'junior_animesh';
+      WazirStore.logIn('junior', juniorId);
+      showToast("Switched to Junior Workspace.", "success");
+      window.location.hash = '#/dashboard';
+      updateThemeClass();
+      handleRouting();
+    }
   };
 
   const handleLoginSubmit = (event) => {
@@ -1783,6 +1830,7 @@ const WazirApp = (() => {
     handleLogout,
     toggleThemeMode,
     changeActiveJunior,
+    handleSettingsRoleSwitch,
     
     // Attendance actions
     renderJuniorAttendance,
