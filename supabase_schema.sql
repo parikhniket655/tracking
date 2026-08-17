@@ -107,7 +107,7 @@ INSERT INTO tasks (id, name, description, vertical, priority, deadline, "assigne
     '[{"name": "Draft_COTY_Pitch.pdf", "url": "#"}, {"name": "Sponsorship_Guidelines.docx", "url": "#"}]'::jsonb, 
     'Requires coordination with PR team for social metrics data.', 
     '2026-08-10T10:00:00',
-    '[{"date": "2026-08-10T10:00:00", "type": "create", "details": "Task created and assigned to Avi with deadline 18 August 2026.", "user": "Wazir Senior"}, {"date": "2026-08-12T14:30:00", "type": "status_change", "details": "Status updated from '\''Not Started'\'' to '\''In Progress'\''.", "user": "Avi"}]'::jsonb
+    '[{"date": "2026-08-10T10:00:00", "type": "create", "details": "Task created and assigned to Avi with deadline 18 August 2026.", "user": "Wazir Senior"}, {"date": "2026-08-12T14:30:00", "type": "status_change", "details": "Status updated from Not Started to In Progress.", "user": "Avi"}]'::jsonb
   ),
   (
     'task_2', 
@@ -122,7 +122,7 @@ INSERT INTO tasks (id, name, description, vertical, priority, deadline, "assigne
     '[]'::jsonb, 
     'Must be approved by senior lead before distributing to media partners.', 
     '2026-08-11T09:30:00',
-    '[{"date": "2026-08-11T09:30:00", "type": "create", "details": "Task created and assigned to Animesh.", "user": "Wazir Senior"}, {"date": "2026-08-13T17:00:00", "type": "status_change", "details": "Status updated from '\''In Progress'\'' to '\''Under Review'\''.", "user": "Animesh"}]'::jsonb
+    '[{"date": "2026-08-11T09:30:00", "type": "create", "details": "Task created and assigned to Animesh.", "user": "Wazir Senior"}, {"date": "2026-08-13T17:00:00", "type": "status_change", "details": "Status updated from In Progress to Under Review.", "user": "Animesh"}]'::jsonb
   ),
   (
     'task_3', 
