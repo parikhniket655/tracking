@@ -1520,16 +1520,7 @@ const WazirApp = (() => {
   
   // Login Controllers
   const populateLoginDropdowns = () => {
-    const select = document.getElementById('login-junior-select');
-    if (!select || select.children.length > 0) return;
-    select.innerHTML = '';
-    const juniors = WazirStore.getJuniors();
-    juniors.forEach(j => {
-      const opt = document.createElement('option');
-      opt.value = j.id;
-      opt.textContent = `${j.name} (${j.vertical})`;
-      select.appendChild(opt);
-    });
+    // No-op: Junior dropdown removed from login overlay
   };
 
   const populateActiveJuniorSelect = () => {
@@ -1589,22 +1580,18 @@ const WazirApp = (() => {
         showToast("Incorrect password. Access denied.", "danger");
       }
     } else {
-      const juniorId = document.getElementById('login-junior-select').value;
-      const junior = WazirStore.getUser(juniorId);
+      const juniorId = WazirStore.getSelectedJuniorId() || 'junior_animesh';
       WazirStore.logIn('junior', juniorId);
-      showToast(`Logged in as ${junior.name} (${junior.vertical}).`, "success");
+      showToast(`Logged in to Junior Workspace.`, "success");
       window.location.hash = '#/dashboard';
     }
   };
 
   const toggleLoginFields = (role) => {
-    const juniorGroup = document.getElementById('login-junior-group');
     const passwordGroup = document.getElementById('login-password-group');
     if (role === 'admin') {
-      if (juniorGroup) juniorGroup.style.display = 'none';
       if (passwordGroup) passwordGroup.style.display = 'block';
     } else {
-      if (juniorGroup) juniorGroup.style.display = 'block';
       if (passwordGroup) passwordGroup.style.display = 'none';
     }
   };
