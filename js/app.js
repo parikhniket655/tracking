@@ -1733,66 +1733,140 @@ const WazirApp = (() => {
   // Admin Attendance Controllers
   let adminAttDate = new Date().toISOString().split('T')[0];
 
+  // Admin Attendance Controllers
+  let adminAttCalMonth = new Date().getMonth();
+  let adminAttCalYear = new Date().getFullYear();
+  let activeEditAttendanceDate = "";
+
   const renderAdminAttendance = () => {
-    populateDateSelect('admin-attendance-date-select', adminAttDate);
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    
+    const titleEl = document.getElementById('admin-attendance-month-year');
+    if (titleEl) {
+      titleEl.textContent = `${monthNames[adminAttCalMonth]} ${adminAttCalYear}`;
+    }
 
-    const juniors = WazirStore.getJuniors();
-    const logs = WazirStore.getAttendanceLogs(adminAttDate);
+    const grid = document.getElementById('admin-attendance-calendar-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
 
-    let present = 0;
-    let late = 0;
-    let absent = 0;
-
-    juniors.forEach(j => {
-      const log = logs.find(l => l.juniorId === j.id);
-      if (log) {
-        if (log.status === 'Present') present++;
-        else if (log.status === 'Late') late++;
-        else if (log.status === 'Absent') absent++;
-      } else {
-        absent++;
+    // Weekday headers
+    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    weekdays.forEach(w => {
+      const header = document.createElement('div');
+      header.className = 'calendar-header-cell';
+      header.textContent = w;
+      if (w === 'Sun') {
+        header.style.color = 'var(--text-muted)';
       }
+      grid.appendChild(header);
     });
 
-    const total = juniors.length;
-    const rate = total > 0 ? Math.round(((present + late) / total) * 100) : 100;
+    // First day of month and total days
+    const firstDay = new Date(adminAttCalYear, adminAttCalMonth, 1).getDay();
+    const totalDays = new Date(adminAttCalYear, adminAttCalMonth + 1, 0).getDate();
 
-    document.getElementById('admin-att-present-count').textContent = present;
-    document.getElementById('admin-att-late-count').textContent = late;
-    document.getElementById('admin-att-absent-count').textContent = absent;
-    document.getElementById('admin-att-total-rate').textContent = `${rate}%`;
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'calendar-day empty';
+      grid.appendChild(empty);
+    }
 
-    const tbody = document.getElementById('admin-attendance-table-list');
+    const juniors = WazirStore.getJuniors();
+
+    // Render cells for each day
+    for (let day = 1; day <= totalDays; day++) {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day';
+      
+      const d = new Date(adminAttCalYear, adminAttCalMonth, day);
+      const isSunday = d.getDay() === 0;
+      
+      const dateStr = `${adminAttCalYear}-${(adminAttCalMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      
+      let cellHTML = `<div class="day-number">${day}</div>`;
+      
+      if (isSunday) {
+        cell.classList.add('holiday-sunday');
+        cellHTML += `<div class="holiday-label">SUNDAY</div><div class="holiday-subtext">Holiday</div>`;
+      } else {
+        const logs = WazirStore.getAttendanceLogs(dateStr);
+        let presentCount = 0;
+        const absentees = [];
+        
+        juniors.forEach(j => {
+          const log = logs.find(l => l.juniorId === j.id);
+          if (log && (log.status === 'Present' || log.status === 'Late')) {
+            presentCount++;
+          } else {
+            absentees.push(j.name);
+          }
+        });
+
+        cellHTML += `
+          <div class="attendance-present-stat">🟢 ${presentCount} Present</div>
+          <div class="attendance-absent-list" title="${absentees.join(', ')}">
+            ${absentees.length > 0 ? `🔴 ${absentees.join(', ')}` : '🎉 No Absentees'}
+          </div>
+        `;
+        
+        cell.onclick = () => WazirApp.openEditAttendanceDialog(dateStr);
+      }
+      
+      cell.innerHTML = cellHTML;
+      grid.appendChild(cell);
+    }
+  };
+
+  const changeAdminAttendanceMonth = (offset) => {
+    adminAttCalMonth += offset;
+    if (adminAttCalMonth < 0) {
+      adminAttCalMonth = 11;
+      adminAttCalYear--;
+    } else if (adminAttCalMonth > 11) {
+      adminAttCalMonth = 0;
+      adminAttCalYear++;
+    }
+    renderAdminAttendance();
+  };
+
+  const openEditAttendanceDialog = (dateStr) => {
+    activeEditAttendanceDate = dateStr;
+    const dateLabel = WazirStore.formatFriendlyDate(dateStr + "T00:00:00").split(',')[0];
+    document.getElementById('edit-attendance-dialog-date').textContent = dateLabel;
+
+    renderEditAttendanceDialogTable();
+    openDialog('admin-attendance-edit-dialog');
+  };
+
+  const renderEditAttendanceDialogTable = () => {
+    const juniors = WazirStore.getJuniors();
+    const logs = WazirStore.getAttendanceLogs(activeEditAttendanceDate);
+    const tbody = document.getElementById('edit-attendance-dialog-table-list');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     juniors.forEach(j => {
       const log = logs.find(l => l.juniorId === j.id);
       const logStatus = log ? log.status : 'Absent (Unmarked)';
       const badgeClass = logStatus === 'Present' ? 'badge-success' : logStatus === 'Late' ? 'badge-warning' : 'badge-danger';
-      let checkInLabel = '—';
-      if (log && log.checkInTime) {
-        const formatted = WazirStore.formatFriendlyDate(log.checkInTime);
-        const parts = formatted.split(',');
-        checkInLabel = parts.length > 1 ? parts[1].trim() : formatted;
-      }
       
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
           <div style="display:flex; align-items:center; gap:8px;">
-            <div style="width:28px; height:28px; border-radius:50%; background-color:var(--primary-color); color:#fff; font-weight:700; font-size:0.75rem; display:flex; align-items:center; justify-content:center;">${j.avatar}</div>
-            <strong style="color:var(--text-primary);">${j.name}</strong>
+            <div style="width:24px; height:24px; border-radius:50%; background-color:var(--primary-color); color:#fff; font-weight:700; font-size:0.7rem; display:flex; align-items:center; justify-content:center;">${j.avatar}</div>
+            <strong style="color:var(--text-primary); font-size:0.85rem;">${j.name}</strong>
           </div>
         </td>
-        <td><span class="badge">${j.vertical}</span></td>
-        <td>${adminAttDate}</td>
-        <td><span class="badge ${badgeClass}">${logStatus}</span></td>
-        <td>${checkInLabel}</td>
+        <td><span class="badge" style="font-size:0.75rem; padding: 2px 6px;">${j.vertical}</span></td>
+        <td><span class="badge ${badgeClass}" style="font-size:0.75rem; padding: 2px 6px;">${logStatus}</span></td>
         <td style="text-align: right;">
           <div style="display: flex; gap: 4px; justify-content: flex-end;">
-            <button class="btn btn-secondary btn-sm" onclick="WazirApp.markJuniorAttendanceByAdmin('${j.id}', 'Present')">Present</button>
-            <button class="btn btn-secondary btn-sm" onclick="WazirApp.markJuniorAttendanceByAdmin('${j.id}', 'Late')">Late</button>
-            <button class="btn btn-danger btn-sm" onclick="WazirApp.markJuniorAttendanceByAdmin('${j.id}', 'Absent')">Absent</button>
+            <button class="btn btn-secondary btn-sm" style="font-size:0.7rem; padding: 4px 8px;" onclick="WazirApp.markAttendanceFromEditDialog('${j.id}', 'Present')">Present</button>
+            <button class="btn btn-secondary btn-sm" style="font-size:0.7rem; padding: 4px 8px;" onclick="WazirApp.markAttendanceFromEditDialog('${j.id}', 'Late')">Late</button>
+            <button class="btn btn-danger btn-sm" style="font-size:0.7rem; padding: 4px 8px;" onclick="WazirApp.markAttendanceFromEditDialog('${j.id}', 'Absent')">Absent</button>
           </div>
         </td>
       `;
@@ -1800,16 +1874,12 @@ const WazirApp = (() => {
     });
   };
 
-  const changeAdminAttendanceDate = (value) => {
-    adminAttDate = value;
-    renderAdminAttendance();
-  };
-
-  const markJuniorAttendanceByAdmin = async (juniorId, status) => {
+  const markAttendanceFromEditDialog = async (juniorId, status) => {
     const checkInTime = status === 'Absent' ? null : new Date().toISOString();
     try {
-      await WazirStore.markAttendance(juniorId, adminAttDate, status, checkInTime);
+      await WazirStore.markAttendance(juniorId, activeEditAttendanceDate, status, checkInTime);
       showToast(`Marked ${WazirStore.getUser(juniorId).name} as ${status}`, "success");
+      renderEditAttendanceDialogTable();
       renderAdminAttendance();
     } catch (err) {
       showToast(err.message, "danger");
@@ -1837,8 +1907,9 @@ const WazirApp = (() => {
     changeJuniorAttendanceDate,
     markAttendanceFromJuniorView,
     renderAdminAttendance,
-    changeAdminAttendanceDate,
-    markJuniorAttendanceByAdmin,
+    changeAdminAttendanceMonth,
+    openEditAttendanceDialog,
+    markAttendanceFromEditDialog,
     
     // Dialog actions
     openDialog,
