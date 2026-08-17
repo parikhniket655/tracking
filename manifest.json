@@ -1,0 +1,19 @@
+{
+  "name": "Wazir Juniors Tracker",
+  "short_name": "Wazir Tracker",
+  "description": "Log in to track tasks, view schedules, request extensions, and mark junior attendance logs.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070d19",
+  "theme_color": "#070d19",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "wazir-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

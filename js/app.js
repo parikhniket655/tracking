@@ -1157,21 +1157,20 @@ const WazirApp = (() => {
     const assigneeLabel = document.getElementById('task-form-assignee-label');
     const titleHeader = document.getElementById('task-dialog-title');
     
+    titleHeader.textContent = "Add Task";
+    assigneeLabel.textContent = "Assignee (Junior)";
+    juniorSelect.innerHTML = juniors.map(j => `<option value="${j.id}">${j.name} (${j.vertical})</option>`).join('');
+    
+    document.getElementById('task-form-senior').value = "Wazir Senior";
     if (activeRole === 'admin') {
-      titleHeader.textContent = "Assign Task to Junior";
-      assigneeLabel.textContent = "Assignee (Junior)";
-      juniorSelect.innerHTML = juniors.map(j => `<option value="${j.id}">${j.name} (${j.vertical})</option>`).join('');
-      document.getElementById('task-form-senior').value = "Wazir Senior";
       document.getElementById('task-form-senior').readOnly = true;
     } else {
-      titleHeader.textContent = "Log My Task";
-      assigneeLabel.textContent = "Assignee";
-      juniorSelect.innerHTML = `<option value="${activeJuniorId}">Myself (${activeJunior.name})</option>`;
-      document.getElementById('task-form-senior').value = "Wazir Senior";
       document.getElementById('task-form-senior').readOnly = false;
-      
-      // Auto-prefill task vertical to match junior vertical
-      document.getElementById('task-form-vertical').value = activeJunior.vertical;
+    }
+    
+    // Auto-prefill task vertical to match the first junior in the list
+    if (juniors.length > 0) {
+      document.getElementById('task-form-vertical').value = juniors[0].vertical;
     }
 
     // Set minimum date to today
@@ -1193,6 +1192,13 @@ const WazirApp = (() => {
     }
 
     openDialog('task-dialog');
+  };
+
+  const handleTaskFormJuniorChange = (juniorId) => {
+    const junior = WazirStore.getUser(juniorId);
+    if (junior) {
+      document.getElementById('task-form-vertical').value = junior.vertical;
+    }
   };
 
   const handleTaskSubmit = (e) => {
@@ -1967,6 +1973,7 @@ const WazirApp = (() => {
     openDialog,
     closeDialog,
     openAddTaskDialog,
+    handleTaskFormJuniorChange,
     handleTaskSubmit,
     openDetailsDialog,
     handleDetailsStatusChange,
