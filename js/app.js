@@ -120,7 +120,6 @@ const WazirApp = (() => {
       document.body.className = 'theme-admin' + (WazirStore.getTheme() === 'dark' ? ' dark-mode' : '');
       document.getElementById('nav-junior-group').style.display = 'none';
       document.getElementById('nav-admin-group').style.display = 'flex';
-      document.getElementById('junior-context-bar').style.display = 'none';
       
       // Update mobile bottom nav elements
       document.getElementById('mob-nav-dash').style.display = 'none';
@@ -138,9 +137,6 @@ const WazirApp = (() => {
       document.body.className = 'theme-junior' + (WazirStore.getTheme() === 'dark' ? ' dark-mode' : '');
       document.getElementById('nav-junior-group').style.display = 'flex';
       document.getElementById('nav-admin-group').style.display = 'none';
-      document.getElementById('junior-context-bar').style.display = 'flex';
-      
-      populateActiveJuniorSelect();
 
       // Update mobile bottom nav elements
       document.getElementById('mob-nav-dash').style.display = 'flex';
@@ -211,11 +207,10 @@ const WazirApp = (() => {
 
   // Nav / Header Badges
   const updateBadges = () => {
-    const activeRole = WazirStore.getActiveRole();
-    const targetId = activeRole === 'admin' ? 'admin_senior' : WazirStore.getSelectedJuniorId();
+    const activeUser = WazirStore.getCurrentUser();
     
     // Notifications Count
-    const unreadCount = WazirStore.getUnreadNotificationCount(targetId);
+    const unreadCount = WazirStore.getUnreadNotificationCount(activeUser.id);
     const sidebarBadge = document.getElementById('sidebar-notif-badge');
     const mobBadge = document.getElementById('mob-notif-badge');
     
@@ -361,17 +356,12 @@ const WazirApp = (() => {
 
   // JUNIOR DASHBOARD
   const renderJuniorDashboard = () => {
-    const juniorId = WazirStore.getSelectedJuniorId();
-    const junior = WazirStore.getUser(juniorId);
-    const tasks = WazirStore.getTasks().filter(t => t.juniorId === juniorId);
-    const requests = WazirStore.getRequests().filter(r => {
-      const task = WazirStore.getTask(r.taskId);
-      return task && task.juniorId === juniorId;
-    });
+    const tasks = WazirStore.getTasks();
+    const requests = WazirStore.getRequests();
 
     // Update headlines
-    document.getElementById('dash-user-name').textContent = junior.name;
-    document.getElementById('dash-user-subtitle').textContent = `${junior.vertical} Vertical • Manage your personal deadlines`;
+    document.getElementById('dash-user-name').textContent = "Junior Workspace";
+    document.getElementById('dash-user-subtitle').textContent = "Team Portal • Manage collective deadlines";
 
     // Counts
     const activeTasks = tasks.filter(t => t.status !== 'Completed');
@@ -451,8 +441,7 @@ const WazirApp = (() => {
 
   // JUNIOR CALENDAR
   const renderJuniorCalendar = () => {
-    const juniorId = WazirStore.getSelectedJuniorId();
-    const tasks = WazirStore.getTasks().filter(t => t.juniorId === juniorId);
+    const tasks = WazirStore.getTasks();
     buildCalendar('calendar-grid-elements', 'calendar-month-year', tasks);
   };
 
@@ -654,8 +643,7 @@ const WazirApp = (() => {
 
   // JUNIOR TASKS LIST
   const renderJuniorTasks = () => {
-    const juniorId = WazirStore.getSelectedJuniorId();
-    let tasks = WazirStore.getTasks().filter(t => t.juniorId === juniorId);
+    let tasks = WazirStore.getTasks();
 
     // Apply Filter values
     const query = document.getElementById('task-search-input').value.toLowerCase();
@@ -742,8 +730,8 @@ const WazirApp = (() => {
 
   // JUNIOR NOTIFICATIONS PAGE
   const renderNotificationsPage = () => {
-    const juniorId = WazirStore.getSelectedJuniorId();
-    const notifs = WazirStore.getNotifications(juniorId);
+    const activeUser = WazirStore.getCurrentUser();
+    const notifs = WazirStore.getNotifications(activeUser.id);
     const listOutlet = document.getElementById('notifications-page-list');
 
     if (notifs.length === 0) {
@@ -1123,9 +1111,8 @@ const WazirApp = (() => {
 
   // Mark all notifications read
   const markAllNotificationsRead = () => {
-    const activeRole = WazirStore.getActiveRole();
-    const targetId = activeRole === 'admin' ? 'admin_senior' : WazirStore.getSelectedJuniorId();
-    WazirStore.markAllNotificationsRead(targetId);
+    const activeUser = WazirStore.getCurrentUser();
+    WazirStore.markAllNotificationsRead(activeUser.id);
     updateBadges();
     showToast("All notifications marked as read", "success");
     
@@ -1536,21 +1523,7 @@ const WazirApp = (() => {
     // No-op: Junior dropdown removed from login overlay
   };
 
-  const populateActiveJuniorSelect = () => {
-    const select = document.getElementById('active-junior-select');
-    if (!select) return;
-    if (select.children.length === 0) {
-      select.innerHTML = '';
-      const juniors = WazirStore.getJuniors();
-      juniors.forEach(j => {
-        const opt = document.createElement('option');
-        opt.value = j.id;
-        opt.textContent = `${j.name} (${j.vertical})`;
-        select.appendChild(opt);
-      });
-    }
-    select.value = WazirStore.getSelectedJuniorId();
-  };
+  // Removed active junior selection methods
 
   const updateUserProfileDisplays = () => {
     const user = WazirStore.getCurrentUser();
@@ -1661,13 +1634,7 @@ const WazirApp = (() => {
     showToast(`Theme updated to ${isDark ? 'Dark' : 'Light'} Mode.`, "success");
   };
 
-  const changeActiveJunior = (juniorId) => {
-    WazirStore.setSelectedJuniorId(juniorId);
-    const junior = WazirStore.getUser(juniorId);
-    showToast(`Switched active profile to ${junior.name} (${junior.vertical})`, "success");
-    updateThemeClass();
-    renderView(currentView);
-  };
+  // Removed changeActiveJunior method
 
   // Junior Attendance Controllers
   let juniorAttDate = new Date().toISOString().split('T')[0];
@@ -1863,7 +1830,6 @@ const WazirApp = (() => {
     toggleLoginFields,
     handleLogout,
     toggleThemeMode,
-    changeActiveJunior,
     handleSettingsRoleSwitch,
     
     // Attendance actions
