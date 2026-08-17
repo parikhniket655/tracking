@@ -1499,7 +1499,10 @@ const WazirApp = (() => {
     toggleEmailList,
     
     // Voice Input Speech-To-Text
-    startVoiceInput
+    startVoiceInput,
+
+    // Refresh active views (for realtime syncing)
+    refreshCurrentView: handleRouting
   };
 })();
 
@@ -1577,4 +1580,14 @@ function startVoiceInput(inputId, btnEl) {
 
 
 // Start Application on Load
-window.addEventListener('DOMContentLoaded', WazirApp.init);
+window.addEventListener('DOMContentLoaded', async () => {
+  // Pull database data from Supabase before initializing UI rendering
+  await WazirStore.initSupabase();
+
+  // If Supabase failed to initialize and load tables, notify user
+  if (!WazirStore.isUsingSupabase()) {
+    WazirApp.showToast("Database not initialized on Supabase. Running in Offline Mock mode. Please run the SQL schema.", "warning");
+  }
+
+  WazirApp.init();
+});

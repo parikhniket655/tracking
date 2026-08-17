@@ -1,53 +1,146 @@
-// Wazir Juniors - LocalStorage Store Manager
+// Wazir Juniors - Supabase Cloud Database Store Manager
 
 const WazirStore = (() => {
-  // Sync helper
-  const save = (key, data) => {
-    localStorage.setItem(`wazir_${key}`, JSON.stringify(data));
+  // Supabase Configuration Credentials
+  const supabaseUrl = 'https://qctpyulbwjiyvzyhsvfg.supabase.co';
+  const supabaseKey = 'sb_publishable_Skq8e-reB7Ym6L-dI5Z53Q_1MT0ekyA';
+  
+  let supabase = null;
+  let usingSupabase = false;
+
+  // Local Cached State Arrays
+  let users = [];
+  let tasks = [];
+  let requests = [];
+  let notifications = [];
+  let emailLogs = [];
+  let currentUser = 'junior_animesh';
+
+  // Initialize Supabase Client & Pull Data
+  const initSupabase = async () => {
+    try {
+      if (typeof window.supabase === 'undefined') {
+        throw new Error("Supabase library not loaded from CDN.");
+      }
+
+      // Create Supabase Client
+      supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+      
+      // Load current user from session cache
+      currentUser = localStorage.getItem('wazir_current_user') || 'junior_animesh';
+
+      // Test query to check if users table exists and fetch
+      const { data: usersData, error: usersErr } = await supabase.from('users').select('*');
+      if (usersErr) throw usersErr;
+      
+      users = usersData;
+      usingSupabase = true;
+
+      // Fetch remainder tables
+      const [tasksRes, reqsRes, notifsRes, emailRes] = await Promise.all([
+        supabase.from('tasks').select('*'),
+        supabase.from('requests').select('*'),
+        supabase.from('notifications').select('*'),
+        supabase.from('email_logs').select('*')
+      ]);
+
+      if (tasksRes.data) tasks = tasksRes.data;
+      if (reqsRes.data) requests = reqsRes.data;
+      if (notifsRes.data) notifications = notifsRes.data;
+      if (emailRes.data) emailLogs = emailRes.data;
+
+      console.log("Connected to Supabase. Loaded", tasks.length, "tasks.");
+
+      // Setup Realtime subscriptions
+      setupRealtimeSubscriptions();
+
+    } catch (err) {
+      console.warn("Supabase connection failed or tables not initialized. Error:", err.message);
+      console.warn("Falling back to local browser storage mock mode.");
+      
+      usingSupabase = false;
+      
+      // Fallback: load seed database from mockData.js or localStorage
+      const loadLocal = (key, fallback) => {
+        const val = localStorage.getItem(`wazir_${key}`);
+        return val ? JSON.parse(val) : fallback;
+      };
+      
+      users = loadLocal('users', DEFAULT_USERS);
+      tasks = loadLocal('tasks', DEFAULT_TASKS);
+      requests = loadLocal('requests', DEFAULT_REQUESTS);
+      notifications = loadLocal('notifications', DEFAULT_NOTIFICATIONS);
+      emailLogs = loadLocal('email_logs', DEFAULT_EMAIL_LOGS);
+      currentUser = localStorage.getItem('wazir_current_user') || 'junior_animesh';
+
+      // Auto-migrate from old placeholder names if needed
+      if (users.some(u => u.id === 'junior_rahil')) {
+        users = DEFAULT_USERS;
+        tasks = DEFAULT_TASKS;
+        requests = DEFAULT_REQUESTS;
+        notifications = DEFAULT_NOTIFICATIONS;
+        emailLogs = DEFAULT_EMAIL_LOGS;
+        currentUser = 'junior_animesh';
+        
+        localStorage.setItem('wazir_users', JSON.stringify(users));
+        localStorage.setItem('wazir_tasks', JSON.stringify(tasks));
+        localStorage.setItem('wazir_requests', JSON.stringify(requests));
+        localStorage.setItem('wazir_notifications', JSON.stringify(notifications));
+        localStorage.setItem('wazir_email_logs', JSON.stringify(emailLogs));
+        localStorage.setItem('wazir_current_user', currentUser);
+      }
+    }
   };
 
-  const load = (key, fallback) => {
-    const val = localStorage.getItem(`wazir_${key}`);
-    return val ? JSON.parse(val) : fallback;
+  // Setup Postgres Change Listeners (Real-time syncing)
+  const setupRealtimeSubscriptions = () => {
+    if (!supabase) return;
+
+    supabase.channel('public:db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, async () => {
+        const { data } = await supabase.from('tasks').select('*');
+        if (data) {
+          tasks = data;
+          triggerUIRefresh();
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, async () => {
+        const { data } = await supabase.from('requests').select('*');
+        if (data) {
+          requests = data;
+          triggerUIRefresh();
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, async () => {
+        const { data } = await supabase.from('notifications').select('*');
+        if (data) {
+          notifications = data;
+          triggerUIRefresh();
+        }
+      })
+      .subscribe();
   };
 
-  // Initialize state
-  let users = load('users', DEFAULT_USERS);
-  let tasks = load('tasks', DEFAULT_TASKS);
-  let requests = load('requests', DEFAULT_REQUESTS);
-  let notifications = load('notifications', DEFAULT_NOTIFICATIONS);
-  let emailLogs = load('email_logs', DEFAULT_EMAIL_LOGS);
-  let currentUser = localStorage.getItem('wazir_current_user') || 'junior_animesh';
+  // Triggers visual refresh of active view in app.js on database change
+  const triggerUIRefresh = () => {
+    if (window.WazirApp && typeof window.WazirApp.refreshCurrentView === 'function') {
+      window.WazirApp.refreshCurrentView();
+    }
+  };
 
-  // Check if we have the old seed data in LocalStorage (contains junior_rahil)
-  // If so, force a migration/reset to the new 10 juniors list
-  if (users.some(u => u.id === 'junior_rahil')) {
-    localStorage.removeItem('wazir_users');
-    localStorage.removeItem('wazir_tasks');
-    localStorage.removeItem('wazir_requests');
-    localStorage.removeItem('wazir_notifications');
-    localStorage.removeItem('wazir_email_logs');
-    localStorage.removeItem('wazir_current_user');
-    
-    users = DEFAULT_USERS;
-    tasks = DEFAULT_TASKS;
-    requests = DEFAULT_REQUESTS;
-    notifications = DEFAULT_NOTIFICATIONS;
-    emailLogs = DEFAULT_EMAIL_LOGS;
-    currentUser = 'junior_animesh';
-  }
-
-  // Seed on first run
-  if (!localStorage.getItem('wazir_users')) {
-    save('users', users);
-    save('tasks', tasks);
-    save('requests', requests);
-    save('notifications', notifications);
-    save('email_logs', emailLogs);
-    localStorage.setItem('wazir_current_user', currentUser);
-  }
+  // Sync helper for Local fallback
+  const syncLocal = (key, data) => {
+    if (!usingSupabase) {
+      localStorage.setItem(`wazir_${key}`, JSON.stringify(data));
+    }
+  };
 
   return {
+    initSupabase,
+    isUsingSupabase() {
+      return usingSupabase;
+    },
+
     // Current User Session
     getCurrentUser() {
       return users.find(u => u.id === currentUser) || users[0];
@@ -70,7 +163,7 @@ const WazirStore = (() => {
     getTask(id) {
       return tasks.find(t => t.id === id);
     },
-    addTask(taskData) {
+    async addTask(taskData) {
       const activeUser = this.getCurrentUser();
       const newTask = {
         id: `task_${Date.now()}`,
@@ -78,7 +171,7 @@ const WazirStore = (() => {
         description: taskData.description || "",
         vertical: taskData.vertical,
         priority: taskData.priority || "Medium",
-        deadline: taskData.deadline, // ISO format
+        deadline: taskData.deadline, 
         assignedBy: activeUser.role === 'admin' ? activeUser.name : (taskData.assignedBy || "Wazir Senior"),
         juniorId: taskData.juniorId || activeUser.id,
         status: taskData.status || "Not Started",
@@ -95,12 +188,18 @@ const WazirStore = (() => {
         ]
       };
       
+      // Update Cache
       tasks.unshift(newTask);
-      save('tasks', tasks);
+      syncLocal('tasks', tasks);
 
-      // Trigger notification for the junior if someone else assigned it (or simulate assignment)
+      // Cloud Write
+      if (usingSupabase) {
+        await supabase.from('tasks').insert([newTask]);
+      }
+
+      // Trigger notification for the junior if someone else assigned it
       if (newTask.juniorId !== activeUser.id) {
-        this.addNotification(
+        await this.addNotification(
           newTask.juniorId,
           "New Task Assigned",
           `${activeUser.name} assigned you: "${newTask.name}".`,
@@ -111,7 +210,7 @@ const WazirStore = (() => {
       return newTask;
     },
     
-    updateTaskStatus(taskId, status, userId) {
+    async updateTaskStatus(taskId, status, userId) {
       const task = this.getTask(taskId);
       const user = this.getUser(userId);
       if (!task) return;
@@ -125,7 +224,12 @@ const WazirStore = (() => {
         user: user ? user.name : "System"
       });
 
-      save('tasks', tasks);
+      // Sync
+      syncLocal('tasks', tasks);
+      if (usingSupabase) {
+        await supabase.from('tasks').update({ status, history: task.history }).eq('id', taskId);
+      }
+
       return task;
     },
 
@@ -136,12 +240,11 @@ const WazirStore = (() => {
     getRequest(id) {
       return requests.find(r => r.id === id);
     },
-    addRequest(reqData) {
+    async addRequest(reqData) {
       const activeUser = this.getCurrentUser();
       const task = this.getTask(reqData.taskId);
       if (!task) return;
 
-      // Check if there is already a pending request for this task
       const hasPending = requests.some(r => r.taskId === reqData.taskId && r.status === 'Pending');
       if (hasPending) throw new Error("A deadline extension request is already pending review for this task.");
 
@@ -157,32 +260,41 @@ const WazirStore = (() => {
         rejectionReason: ""
       };
 
+      // Cache Update
       requests.unshift(newReq);
-      save('requests', requests);
+      syncLocal('requests', requests);
 
-      // Add to task history
       task.history.push({
         date: new Date().toISOString(),
         type: "deadline_change_request",
         details: `Requested extension to ${this.formatFriendlyDate(reqData.requestedDeadline)}. Reason: ${reqData.reason}`,
         user: activeUser.name
       });
-      save('tasks', tasks);
+      syncLocal('tasks', tasks);
+
+      // Cloud Writes
+      if (usingSupabase) {
+        await Promise.all([
+          supabase.from('requests').insert([newReq]),
+          supabase.from('tasks').update({ history: task.history }).eq('id', task.id)
+        ]);
+      }
 
       // Notify Admins
-      users.filter(u => u.role === 'admin').forEach(admin => {
-        this.addNotification(
+      const admins = users.filter(u => u.role === 'admin');
+      for (const admin of admins) {
+        await this.addNotification(
           admin.id,
           "Deadline Extension Requested",
           `${activeUser.name} requested an extension for "${task.name}".`,
           "request_submitted"
         );
-      });
+      }
 
       return newReq;
     },
 
-    reviewRequest(reqId, status, rejectionReason = "", reviewerId) {
+    async reviewRequest(reqId, status, rejectionReason = "", reviewerId) {
       const req = this.getRequest(reqId);
       const reviewer = this.getUser(reviewerId);
       if (!req || req.status !== 'Pending') return;
@@ -207,7 +319,7 @@ const WazirStore = (() => {
         });
 
         // Notify Junior
-        this.addNotification(
+        await this.addNotification(
           req.juniorId,
           "Deadline Request Approved",
           `Your request to extend "${task.name}" to ${this.formatFriendlyDate(req.requestedDeadline)} was approved.`,
@@ -222,7 +334,7 @@ const WazirStore = (() => {
         });
 
         // Notify Junior
-        this.addNotification(
+        await this.addNotification(
           req.juniorId,
           "Deadline Request Rejected",
           `Your request to extend "${task.name}" was rejected. ${rejectionReason ? 'Reason: ' + rejectionReason : ''}`,
@@ -230,8 +342,23 @@ const WazirStore = (() => {
         );
       }
 
-      save('requests', requests);
-      save('tasks', tasks);
+      // Sync
+      syncLocal('requests', requests);
+      syncLocal('tasks', tasks);
+
+      if (usingSupabase) {
+        if (status === 'Approved') {
+          await Promise.all([
+            supabase.from('requests').update({ status, rejectionReason }).eq('id', reqId),
+            supabase.from('tasks').update({ deadline: task.deadline, history: task.history }).eq('id', task.id)
+          ]);
+        } else {
+          await Promise.all([
+            supabase.from('requests').update({ status, rejectionReason }).eq('id', reqId),
+            supabase.from('tasks').update({ history: task.history }).eq('id', task.id)
+          ]);
+        }
+      }
     },
 
     // Notifications
@@ -241,7 +368,7 @@ const WazirStore = (() => {
     getUnreadNotificationCount(userId) {
       return notifications.filter(n => n.userId === userId && !n.read).length;
     },
-    addNotification(userId, title, message, type) {
+    async addNotification(userId, title, message, type) {
       const newNotif = {
         id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
         userId,
@@ -249,32 +376,45 @@ const WazirStore = (() => {
         message,
         timestamp: new Date().toISOString(),
         read: false,
-        type // 'task_assigned', 'deadline_approaching', 'task_overdue', 'request_approved', 'request_rejected', 'request_submitted'
+        type
       };
       
+      // Cache Update
       notifications.unshift(newNotif);
-      save('notifications', notifications);
+      syncLocal('notifications', notifications);
+
+      if (usingSupabase) {
+        await supabase.from('notifications').insert([newNotif]);
+      }
       return newNotif;
     },
-    markNotificationRead(notifId) {
+    async markNotificationRead(notifId) {
       const notif = notifications.find(n => n.id === notifId);
       if (notif) {
         notif.read = true;
-        save('notifications', notifications);
+        syncLocal('notifications', notifications);
+
+        if (usingSupabase) {
+          await supabase.from('notifications').update({ read: true }).eq('id', notifId);
+        }
       }
     },
-    markAllNotificationsRead(userId) {
+    async markAllNotificationsRead(userId) {
       notifications.forEach(n => {
         if (n.userId === userId) n.read = true;
       });
-      save('notifications', notifications);
+      syncLocal('notifications', notifications);
+
+      if (usingSupabase) {
+        await supabase.from('notifications').update({ read: true }).eq('userId', userId);
+      }
     },
 
     // Email logs
     getEmailLogs() {
       return emailLogs;
     },
-    addEmailLog(emailData) {
+    async addEmailLog(emailData) {
       const newEmail = {
         id: `email_${Date.now()}`,
         to: emailData.to,
@@ -284,8 +424,13 @@ const WazirStore = (() => {
         taskId: emailData.taskId
       };
 
+      // Cache Update
       emailLogs.unshift(newEmail);
-      save('email_logs', emailLogs);
+      syncLocal('email_logs', emailLogs);
+
+      if (usingSupabase) {
+        await supabase.from('email_logs').insert([newEmail]);
+      }
       return newEmail;
     },
 
@@ -298,17 +443,39 @@ const WazirStore = (() => {
       const minutes = d.getMinutes().toString().padStart(2, '0');
       const ampm = hours >= 12 ? 'PM' : 'AM';
       hours = hours % 12;
-      hours = hours ? hours : 12; // key 0 to 12
+      hours = hours ? hours : 12;
       return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}, ${hours}:${minutes} ${ampm}`;
     },
 
-    resetStore() {
-      localStorage.removeItem('wazir_users');
-      localStorage.removeItem('wazir_tasks');
-      localStorage.removeItem('wazir_requests');
-      localStorage.removeItem('wazir_notifications');
-      localStorage.removeItem('wazir_email_logs');
-      localStorage.removeItem('wazir_current_user');
+    async resetStore() {
+      if (usingSupabase) {
+        try {
+          // Truncate tables
+          await Promise.all([
+            supabase.from('email_logs').delete().neq('id', ''),
+            supabase.from('notifications').delete().neq('id', ''),
+            supabase.from('requests').delete().neq('id', ''),
+            supabase.from('tasks').delete().neq('id', '')
+          ]);
+
+          // Re-insert initial seeding
+          await Promise.all([
+            supabase.from('tasks').insert(DEFAULT_TASKS),
+            supabase.from('requests').insert(DEFAULT_REQUESTS),
+            supabase.from('notifications').insert(DEFAULT_NOTIFICATIONS),
+            supabase.from('email_logs').insert(DEFAULT_EMAIL_LOGS)
+          ]);
+        } catch (err) {
+          console.error("Error resetting Supabase database:", err.message);
+        }
+      } else {
+        localStorage.removeItem('wazir_users');
+        localStorage.removeItem('wazir_tasks');
+        localStorage.removeItem('wazir_requests');
+        localStorage.removeItem('wazir_notifications');
+        localStorage.removeItem('wazir_email_logs');
+        localStorage.removeItem('wazir_current_user');
+      }
       window.location.reload();
     }
   };
