@@ -1584,6 +1584,54 @@ body.theme-admin .progress-bar-fill {
     padding-bottom: 100px;
   }
 
+  /* ── Attendance Calendar — Mobile Compact Mode ── */
+  #admin-attendance-calendar-grid {
+    gap: 3px;
+  }
+
+  /* Shrink weekday labels */
+  #admin-attendance-calendar-grid .calendar-weekday {
+    font-size: 0.6rem;
+    padding-bottom: 6px;
+  }
+
+  /* Compact cells: fixed small square */
+  #admin-attendance-calendar-grid .calendar-day {
+    min-height: 0;
+    padding: 4px 3px;
+    border-radius: 6px;
+    gap: 2px;
+    aspect-ratio: unset;
+    height: 72px;
+    overflow: hidden;
+  }
+
+  /* Day number tiny */
+  #admin-attendance-calendar-grid .calendar-day .day-number {
+    font-size: 0.65rem !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Hide the absentee name pills completely on mobile */
+  .att-absentee-list {
+    display: none !important;
+  }
+
+  /* Make the green "X Present" badge tiny and block */
+  .att-present-badge {
+    font-size: 0.55rem !important;
+    padding: 2px 3px !important;
+    margin-top: 2px !important;
+    border-radius: 4px !important;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  /* Sunday label tiny */
+  #admin-attendance-calendar-grid .calendar-day [style*="color:var(--text-muted)"] {
+    font-size: 0.45rem !important;
+  }
+
   /* Table-to-Card Responsive Transformation */
   .table-wrapper {
     background: transparent;
