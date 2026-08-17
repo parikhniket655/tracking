@@ -1623,62 +1623,61 @@ const WazirApp = (() => {
   };
 
   // Junior Attendance Controllers
+  let juniorAttDate = new Date().toISOString().split('T')[0];
+
   const renderJuniorAttendance = () => {
-    const juniorId = WazirStore.getSelectedJuniorId();
-    const today = new Date().toISOString().split('T')[0];
-    const friendlyToday = WazirStore.formatFriendlyDate(new Date().toISOString()).split(',')[0];
-    document.getElementById('checkin-date-display').textContent = friendlyToday;
-
-    const logsSummary = WazirStore.getJuniorAttendanceSummary(juniorId);
-    
-    document.getElementById('junior-attendance-rate').textContent = `${logsSummary.rate}%`;
-    document.getElementById('junior-present-count').textContent = logsSummary.present;
-    document.getElementById('junior-late-count').textContent = logsSummary.late;
-    document.getElementById('junior-absent-count').textContent = logsSummary.absent;
-
-    const logs = logsSummary.logs;
-    const todayLog = logs.find(l => l.date === today);
-    const badge = document.getElementById('checkin-status-badge');
-    const actions = document.getElementById('checkin-actions');
-
-    if (todayLog) {
-      badge.textContent = `Checked-In: ${todayLog.status}`;
-      badge.className = `badge ${todayLog.status === 'Present' ? 'badge-success' : todayLog.status === 'Late' ? 'badge-warning' : 'badge-danger'}`;
-      actions.style.display = 'none';
-    } else {
-      badge.textContent = "Pending Check-In";
-      badge.className = "badge badge-neutral";
-      actions.style.display = 'flex';
+    const picker = document.getElementById('junior-attendance-date-picker');
+    if (picker) {
+      picker.value = juniorAttDate;
     }
 
-    const tbody = document.getElementById('junior-attendance-history-list');
+    const juniors = WazirStore.getJuniors();
+    const logs = WazirStore.getAttendanceLogs(juniorAttDate);
+
+    const tbody = document.getElementById('junior-attendance-table-list');
+    if (!tbody) return;
     tbody.innerHTML = '';
-    
-    if (logs.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">No logs recorded.</td></tr>`;
-      return;
-    }
 
-    logs.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(log => {
+    juniors.forEach(j => {
+      const log = logs.find(l => l.juniorId === j.id);
+      const logStatus = log ? log.status : 'Absent (Unmarked)';
+      const badgeClass = logStatus === 'Present' ? 'badge-success' : logStatus === 'Late' ? 'badge-warning' : 'badge-danger';
+      const checkInLabel = log && log.checkInTime ? WazirStore.formatFriendlyDate(log.checkInTime).split(',')[1].trim() : '—';
+      
       const tr = document.createElement('tr');
-      const badgeClass = log.status === 'Present' ? 'badge-success' : log.status === 'Late' ? 'badge-warning' : 'badge-danger';
       tr.innerHTML = `
-        <td><strong>${WazirStore.formatFriendlyDate(log.date + "T00:00:00").split(',')[0]}</strong></td>
-        <td><span class="badge ${badgeClass}">${log.status}</span></td>
-        <td>${log.checkInTime ? WazirStore.formatFriendlyDate(log.checkInTime).split(',')[1].trim() : '—'}</td>
+        <td>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:28px; height:28px; border-radius:50%; background-color:var(--primary-color); color:#fff; font-weight:700; font-size:0.75rem; display:flex; align-items:center; justify-content:center;">${j.avatar}</div>
+            <strong style="color:var(--text-primary);">${j.name}</strong>
+          </div>
+        </td>
+        <td><span class="badge">${j.vertical}</span></td>
+        <td>${juniorAttDate}</td>
+        <td><span class="badge ${badgeClass}">${logStatus}</span></td>
+        <td>${checkInLabel}</td>
+        <td style="text-align: right;">
+          <div style="display: flex; gap: 4px; justify-content: flex-end;">
+            <button class="btn btn-secondary btn-sm" onclick="WazirApp.markAttendanceFromJuniorView('${j.id}', 'Present')">Present</button>
+            <button class="btn btn-secondary btn-sm" onclick="WazirApp.markAttendanceFromJuniorView('${j.id}', 'Late')">Late</button>
+            <button class="btn btn-danger btn-sm" onclick="WazirApp.markAttendanceFromJuniorView('${j.id}', 'Absent')">Absent</button>
+          </div>
+        </td>
       `;
       tbody.appendChild(tr);
     });
   };
 
-  const markJuniorCheckIn = async (status) => {
-    const juniorId = WazirStore.getSelectedJuniorId();
-    const today = new Date().toISOString().split('T')[0];
-    const checkInTime = new Date().toISOString();
-    
+  const changeJuniorAttendanceDate = (value) => {
+    juniorAttDate = value;
+    renderJuniorAttendance();
+  };
+
+  const markAttendanceFromJuniorView = async (juniorId, status) => {
+    const checkInTime = status === 'Absent' ? null : new Date().toISOString();
     try {
-      await WazirStore.markAttendance(juniorId, today, status, checkInTime);
-      showToast(`Checked in successfully as ${status}!`, "success");
+      await WazirStore.markAttendance(juniorId, juniorAttDate, status, checkInTime);
+      showToast(`Marked ${WazirStore.getUser(juniorId).name} as ${status}`, "success");
       renderJuniorAttendance();
     } catch (err) {
       showToast(err.message, "danger");
@@ -1787,7 +1786,8 @@ const WazirApp = (() => {
     
     // Attendance actions
     renderJuniorAttendance,
-    markJuniorCheckIn,
+    changeJuniorAttendanceDate,
+    markAttendanceFromJuniorView,
     renderAdminAttendance,
     changeAdminAttendanceDate,
     markJuniorAttendanceByAdmin,
