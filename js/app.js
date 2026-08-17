@@ -1672,11 +1672,38 @@ const WazirApp = (() => {
   // Junior Attendance Controllers
   let juniorAttDate = new Date().toISOString().split('T')[0];
 
-  const renderJuniorAttendance = () => {
-    const picker = document.getElementById('junior-attendance-date-picker');
-    if (picker) {
-      picker.value = juniorAttDate;
+  const populateDateSelect = (elementId, selectedValue) => {
+    const select = document.getElementById(elementId);
+    if (!select) return;
+    
+    select.innerHTML = '';
+    
+    // Generate dates: 14 days ago to today
+    const dates = [];
+    const now = new Date();
+    
+    for (let i = 0; i < 14; i++) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      
+      let label = "";
+      if (i === 0) label = "Today";
+      else if (i === 1) label = "Yesterday";
+      else {
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        label = `${d.getDate()} ${months[d.getMonth()]}`;
+      }
+      
+      dates.push({ value: dateStr, label: `${label} (${d.getFullYear()})` });
     }
+    
+    select.innerHTML = dates.map(d => `<option value="${d.value}">${d.label}</option>`).join('');
+    select.value = selectedValue;
+  };
+
+  const renderJuniorAttendance = () => {
+    populateDateSelect('junior-attendance-date-select', juniorAttDate);
 
     const juniors = WazirStore.getJuniors();
     const logs = WazirStore.getAttendanceLogs(juniorAttDate);
@@ -1740,10 +1767,7 @@ const WazirApp = (() => {
   let adminAttDate = new Date().toISOString().split('T')[0];
 
   const renderAdminAttendance = () => {
-    const picker = document.getElementById('admin-attendance-date-picker');
-    if (picker) {
-      picker.value = adminAttDate;
-    }
+    populateDateSelect('admin-attendance-date-select', adminAttDate);
 
     const juniors = WazirStore.getJuniors();
     const logs = WazirStore.getAttendanceLogs(adminAttDate);

@@ -321,7 +321,7 @@
             <!-- Date Selection -->
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Date:</span>
-              <input type="date" id="junior-attendance-date-picker" onchange="WazirApp.changeJuniorAttendanceDate(this.value)" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-primary); font-weight: 600; font-size: 0.85rem; outline: none;">
+              <select id="junior-attendance-date-select" onchange="WazirApp.changeJuniorAttendanceDate(this.value)" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-primary); font-weight: 600; font-size: 0.85rem; outline: none; cursor: pointer;"></select>
             </div>
           </div>
 
@@ -652,7 +652,7 @@
             <!-- Date selection bar -->
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Date:</span>
-              <input type="date" id="admin-attendance-date-picker" onchange="WazirApp.changeAdminAttendanceDate(this.value)" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-primary); font-weight: 600; font-size: 0.85rem; outline: none;">
+              <select id="admin-attendance-date-select" onchange="WazirApp.changeAdminAttendanceDate(this.value)" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-primary); font-weight: 600; font-size: 0.85rem; outline: none; cursor: pointer;"></select>
             </div>
           </div>
 
