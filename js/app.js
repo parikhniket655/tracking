@@ -205,10 +205,11 @@ const WazirApp = (() => {
 
   // Nav / Header Badges
   const updateBadges = () => {
-    const activeUser = WazirStore.getCurrentUser();
+    const activeRole = WazirStore.getActiveRole();
+    const targetId = activeRole === 'admin' ? 'admin_senior' : WazirStore.getSelectedJuniorId();
     
     // Notifications Count
-    const unreadCount = WazirStore.getUnreadNotificationCount(activeUser.id);
+    const unreadCount = WazirStore.getUnreadNotificationCount(targetId);
     const sidebarBadge = document.getElementById('sidebar-notif-badge');
     const mobBadge = document.getElementById('mob-notif-badge');
     
@@ -354,9 +355,13 @@ const WazirApp = (() => {
 
   // JUNIOR DASHBOARD
   const renderJuniorDashboard = () => {
-    const junior = WazirStore.getCurrentUser();
-    const tasks = WazirStore.getTasks().filter(t => t.juniorId === junior.id);
-    const requests = WazirStore.getRequests().filter(r => r.juniorId === junior.id);
+    const juniorId = WazirStore.getSelectedJuniorId();
+    const junior = WazirStore.getUser(juniorId);
+    const tasks = WazirStore.getTasks().filter(t => t.juniorId === juniorId);
+    const requests = WazirStore.getRequests().filter(r => {
+      const task = WazirStore.getTask(r.taskId);
+      return task && task.juniorId === juniorId;
+    });
 
     // Update headlines
     document.getElementById('dash-user-name').textContent = junior.name;
@@ -440,8 +445,8 @@ const WazirApp = (() => {
 
   // JUNIOR CALENDAR
   const renderJuniorCalendar = () => {
-    const junior = WazirStore.getCurrentUser();
-    const tasks = WazirStore.getTasks().filter(t => t.juniorId === junior.id);
+    const juniorId = WazirStore.getSelectedJuniorId();
+    const tasks = WazirStore.getTasks().filter(t => t.juniorId === juniorId);
     buildCalendar('calendar-grid-elements', 'calendar-month-year', tasks);
   };
 
@@ -643,8 +648,8 @@ const WazirApp = (() => {
 
   // JUNIOR TASKS LIST
   const renderJuniorTasks = () => {
-    const junior = WazirStore.getCurrentUser();
-    let tasks = WazirStore.getTasks().filter(t => t.juniorId === junior.id);
+    const juniorId = WazirStore.getSelectedJuniorId();
+    let tasks = WazirStore.getTasks().filter(t => t.juniorId === juniorId);
 
     // Apply Filter values
     const query = document.getElementById('task-search-input').value.toLowerCase();
@@ -731,8 +736,8 @@ const WazirApp = (() => {
 
   // JUNIOR NOTIFICATIONS PAGE
   const renderNotificationsPage = () => {
-    const junior = WazirStore.getCurrentUser();
-    const notifs = WazirStore.getNotifications(junior.id);
+    const juniorId = WazirStore.getSelectedJuniorId();
+    const notifs = WazirStore.getNotifications(juniorId);
     const listOutlet = document.getElementById('notifications-page-list');
 
     if (notifs.length === 0) {
@@ -1112,8 +1117,9 @@ const WazirApp = (() => {
 
   // Mark all notifications read
   const markAllNotificationsRead = () => {
-    const user = WazirStore.getCurrentUser();
-    WazirStore.markAllNotificationsRead(user.id);
+    const activeRole = WazirStore.getActiveRole();
+    const targetId = activeRole === 'admin' ? 'admin_senior' : WazirStore.getSelectedJuniorId();
+    WazirStore.markAllNotificationsRead(targetId);
     updateBadges();
     showToast("All notifications marked as read", "success");
     
@@ -1142,7 +1148,9 @@ const WazirApp = (() => {
 
   // Add Task dialog opener
   const openAddTaskDialog = (prefilledDate = "") => {
-    const activeUser = WazirStore.getCurrentUser();
+    const activeRole = WazirStore.getActiveRole();
+    const activeJuniorId = WazirStore.getSelectedJuniorId();
+    const activeJunior = WazirStore.getUser(activeJuniorId);
     const dialog = document.getElementById('task-dialog');
     const form = document.getElementById('task-form');
     
@@ -1156,21 +1164,21 @@ const WazirApp = (() => {
     const assigneeLabel = document.getElementById('task-form-assignee-label');
     const titleHeader = document.getElementById('task-dialog-title');
     
-    if (activeUser.role === 'admin') {
+    if (activeRole === 'admin') {
       titleHeader.textContent = "Assign Task to Junior";
       assigneeLabel.textContent = "Assignee (Junior)";
       juniorSelect.innerHTML = juniors.map(j => `<option value="${j.id}">${j.name} (${j.vertical})</option>`).join('');
-      document.getElementById('task-form-senior').value = activeUser.name;
+      document.getElementById('task-form-senior').value = "Wazir Senior";
       document.getElementById('task-form-senior').readOnly = true;
     } else {
       titleHeader.textContent = "Log My Task";
       assigneeLabel.textContent = "Assignee";
-      juniorSelect.innerHTML = `<option value="${activeUser.id}">Myself (${activeUser.name})</option>`;
+      juniorSelect.innerHTML = `<option value="${activeJuniorId}">Myself (${activeJunior.name})</option>`;
       document.getElementById('task-form-senior').value = "Wazir Senior";
       document.getElementById('task-form-senior').readOnly = false;
       
       // Auto-prefill task vertical to match junior vertical
-      document.getElementById('task-form-vertical').value = activeUser.vertical;
+      document.getElementById('task-form-vertical').value = activeJunior.vertical;
     }
 
     // Set minimum date to today
@@ -1232,7 +1240,8 @@ const WazirApp = (() => {
   const openDetailsDialog = (taskId) => {
     activeDetailsTaskId = taskId;
     const task = WazirStore.getTask(taskId);
-    const activeUser = WazirStore.getCurrentUser();
+    const activeRole = WazirStore.getActiveRole();
+    const activeJuniorId = WazirStore.getSelectedJuniorId();
     if (!task) return;
 
     document.getElementById('details-task-name').textContent = task.name;
@@ -1246,7 +1255,7 @@ const WazirApp = (() => {
 
     // Check if Junior vs Admin limits status dropdown
     // Only the assigned junior (or an admin) can update statuses
-    if (activeUser.role === 'junior' && task.juniorId !== activeUser.id) {
+    if (activeRole === 'junior' && task.juniorId !== activeJuniorId) {
       statusSelect.disabled = true;
     } else {
       statusSelect.disabled = false;
@@ -1312,9 +1321,10 @@ const WazirApp = (() => {
 
   const handleDetailsStatusChange = (newStatus) => {
     if (!activeDetailsTaskId) return;
-    const user = WazirStore.getCurrentUser();
+    const activeRole = WazirStore.getActiveRole();
+    const userId = activeRole === 'admin' ? 'admin_senior' : WazirStore.getSelectedJuniorId();
     
-    WazirStore.updateTaskStatus(activeDetailsTaskId, newStatus, user.id);
+    WazirStore.updateTaskStatus(activeDetailsTaskId, newStatus, userId);
     showToast(`Status updated to ${newStatus}`, "success");
     
     // Refresh modal details
@@ -1408,10 +1418,9 @@ const WazirApp = (() => {
     if (e) e.preventDefault();
     if (!activeReviewReqId) return;
 
-    const reviewer = WazirStore.getCurrentUser();
     const rejectionReason = document.getElementById('review-form-rejection-reason').value;
 
-    WazirStore.reviewRequest(activeReviewReqId, status, rejectionReason, reviewer.id);
+    WazirStore.reviewRequest(activeReviewReqId, status, rejectionReason, 'admin_senior');
     closeDialog('review-dialog');
     showToast(`Request ${status} successfully!`, "success");
 
@@ -1432,14 +1441,12 @@ const WazirApp = (() => {
 
   // Quick Action review without popup
   const quickReviewRequest = (reqId, status) => {
-    const reviewer = WazirStore.getCurrentUser();
-    
     if (status === 'Rejected') {
       const reason = prompt("Enter rejection reason:");
       if (reason === null) return; // user cancelled prompt
-      WazirStore.reviewRequest(reqId, 'Rejected', reason, reviewer.id);
+      WazirStore.reviewRequest(reqId, 'Rejected', reason, 'admin_senior');
     } else {
-      WazirStore.reviewRequest(reqId, 'Approved', "", reviewer.id);
+      WazirStore.reviewRequest(reqId, 'Approved', "", 'admin_senior');
     }
 
     showToast(`Request ${status}!`, "success");
@@ -1617,12 +1624,12 @@ const WazirApp = (() => {
 
   // Junior Attendance Controllers
   const renderJuniorAttendance = () => {
-    const junior = WazirStore.getCurrentUser();
+    const juniorId = WazirStore.getSelectedJuniorId();
     const today = new Date().toISOString().split('T')[0];
     const friendlyToday = WazirStore.formatFriendlyDate(new Date().toISOString()).split(',')[0];
     document.getElementById('checkin-date-display').textContent = friendlyToday;
 
-    const logsSummary = WazirStore.getJuniorAttendanceSummary(junior.id);
+    const logsSummary = WazirStore.getJuniorAttendanceSummary(juniorId);
     
     document.getElementById('junior-attendance-rate').textContent = `${logsSummary.rate}%`;
     document.getElementById('junior-present-count').textContent = logsSummary.present;
@@ -1665,12 +1672,12 @@ const WazirApp = (() => {
   };
 
   const markJuniorCheckIn = async (status) => {
-    const junior = WazirStore.getCurrentUser();
+    const juniorId = WazirStore.getSelectedJuniorId();
     const today = new Date().toISOString().split('T')[0];
     const checkInTime = new Date().toISOString();
     
     try {
-      await WazirStore.markAttendance(junior.id, today, status, checkInTime);
+      await WazirStore.markAttendance(juniorId, today, status, checkInTime);
       showToast(`Checked in successfully as ${status}!`, "success");
       renderJuniorAttendance();
     } catch (err) {

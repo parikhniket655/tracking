@@ -259,9 +259,23 @@ const WazirStore = (() => {
     // Current User Profile Resolution
     getCurrentUser() {
       if (activeRole === 'admin') {
-        return users.find(u => u.role === 'admin') || users[users.length - 1];
+        return {
+          id: "admin_senior",
+          name: "Wazir Senior",
+          email: "senior@wazir.in",
+          role: "admin",
+          vertical: "Other",
+          avatar: "WS"
+        };
       } else {
-        return users.find(u => u.id === selectedJuniorId) || users[0];
+        return {
+          id: "junior_workspace",
+          name: "Junior",
+          email: "junior@wazir.in",
+          role: "junior",
+          vertical: "Junior Workspace",
+          avatar: "JR"
+        };
       }
     },
     getUsers() {
