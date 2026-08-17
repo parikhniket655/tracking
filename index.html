@@ -8,8 +8,43 @@
 </head>
 <body class="theme-junior">
 
+  <!-- Login View (takes up full screen when active) -->
+  <div id="view-login" class="login-wrapper" style="display: none;">
+    <div class="login-card">
+      <div class="login-logo">W</div>
+      <h2 class="login-title">Wazir Juniors</h2>
+      <p class="login-subtitle">Task & Deadline Tracker</p>
+      
+      <form id="login-form" onsubmit="WazirApp.handleLoginSubmit(event)">
+        <div class="form-group">
+          <label for="login-role-select">Select Workspace</label>
+          <select id="login-role-select" onchange="WazirApp.toggleLoginFields(this.value)" class="form-control">
+            <option value="junior">Junior Workspace</option>
+            <option value="admin">Senior Workspace</option>
+          </select>
+        </div>
+        
+        <!-- Junior specific fields -->
+        <div class="form-group" id="login-junior-group">
+          <label for="login-junior-select">Select Your Name</label>
+          <select id="login-junior-select" class="form-control">
+            <!-- Populated dynamically with the 10 juniors -->
+          </select>
+        </div>
+        
+        <!-- Senior specific fields -->
+        <div class="form-group" id="login-password-group" style="display: none;">
+          <label for="login-password-input">Senior Password</label>
+          <input type="password" id="login-password-input" class="form-control" placeholder="Enter password">
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 16px;">Log In</button>
+      </form>
+    </div>
+  </div>
+
   <!-- Application Shell -->
-  <div class="app-container">
+  <div class="app-container" id="app-shell" style="display: none;">
     
     <!-- Header Control Bar -->
     <header class="app-header">
@@ -24,11 +59,10 @@
           ✉️ <span class="desktop-only">Emails</span>
         </button>
 
-        <!-- Role Select Switcher -->
-        <div class="user-select-wrapper">
-          <select id="user-role-select" class="user-select" onchange="WazirApp.switchUser(this.value)">
-            <!-- Options dynamically populated by store -->
-          </select>
+        <!-- User Profile Badge (Clicking navigates to Settings) -->
+        <div class="user-profile-badge" onclick="WazirApp.navigate('settings')" style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 12px; border-radius: 20px; background-color: var(--bg-card); border: 1px solid var(--border-color);">
+          <div class="user-avatar" id="header-user-avatar" style="width: 24px; height: 24px; border-radius: 50%; background-color: var(--primary-color); color: #fff; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; justify-content: center;">AN</div>
+          <span class="desktop-only" id="header-user-name" style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary);">Animesh</span>
         </div>
       </div>
     </header>
@@ -49,9 +83,15 @@
           <a class="nav-item" onclick="WazirApp.navigate('tasks')">
             <span class="nav-icon">📝</span> My Tasks
           </a>
+          <a class="nav-item" onclick="WazirApp.navigate('attendance')">
+            <span class="nav-icon">⏰</span> Attendance
+          </a>
           <a class="nav-item" onclick="WazirApp.navigate('notifications')">
             <span class="nav-icon">🔔</span> Notifications
             <span class="nav-badge" id="sidebar-notif-badge" style="display: none;">0</span>
+          </a>
+          <a class="nav-item" onclick="WazirApp.navigate('settings')">
+            <span class="nav-icon">⚙️</span> Settings
           </a>
         </nav>
 
@@ -70,8 +110,14 @@
             <span class="nav-icon">⚖️</span> Deadline Requests
             <span class="nav-badge" id="sidebar-request-badge" style="display: none;">0</span>
           </a>
+          <a class="nav-item" onclick="WazirApp.navigate('admin-attendance')">
+            <span class="nav-icon">📅</span> Attendance Track
+          </a>
           <a class="nav-item" onclick="WazirApp.navigate('admin-progress')">
             <span class="nav-icon">👥</span> Team Progress
+          </a>
+          <a class="nav-item" onclick="WazirApp.navigate('settings')">
+            <span class="nav-icon">⚙️</span> Settings
           </a>
         </nav>
 
@@ -84,6 +130,14 @@
 
       <!-- Main Injectable Canvas -->
       <main class="app-main">
+        
+        <!-- Junior Context Bar (Only visible in Junior Workspace) -->
+        <div id="junior-context-bar" class="context-bar" style="display: none;">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Active Junior Profile:</span>
+          <select id="active-junior-select" onchange="WazirApp.changeActiveJunior(this.value)">
+            <!-- Dynamically populated with the 10 juniors -->
+          </select>
+        </div>
         
         <!-- ================= JUNIOR VIEWS ================= -->
         
@@ -261,6 +315,113 @@
           </div>
           <div class="notification-list" id="notifications-page-list">
             <!-- Full notification list rendered here -->
+          </div>
+        </div>
+
+        <!-- Junior Attendance View -->
+        <div id="view-attendance" class="view-container">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1 class="view-title">My Attendance & Logs</h1>
+              <p class="view-subtitle">Mark your daily check-in and track your monthly attendance</p>
+            </div>
+          </div>
+          
+          <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-bottom: 24px;">
+            <!-- Check In Card -->
+            <div class="card" id="junior-checkin-card">
+              <h3 style="margin-bottom: 12px;">Daily Check-In</h3>
+              <div style="text-align: center; padding: 20px 0;">
+                <div id="checkin-date-display" style="font-weight: 700; font-size: 1.1rem; margin-bottom: 8px;">18 Aug 2026</div>
+                <div id="checkin-status-badge" class="badge" style="margin-bottom: 16px;">Pending Check-In</div>
+                <div id="checkin-actions" style="display: flex; gap: 8px; justify-content: center;">
+                  <button class="btn btn-primary" onclick="WazirApp.markJuniorCheckIn('Present')" style="padding: 10px 20px;">Present</button>
+                  <button class="btn btn-secondary" onclick="WazirApp.markJuniorCheckIn('Late')" style="padding: 10px 20px;">Late</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Attendance Stats Card -->
+            <div class="card">
+              <h3 style="margin-bottom: 12px;">Monthly Summary</h3>
+              <div style="display: flex; align-items: center; justify-content: space-around; height: calc(100% - 40px);">
+                <div style="text-align: center;">
+                  <div id="junior-attendance-rate" style="font-size: 2.2rem; font-weight: 800; color: var(--primary-color);">100%</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-top: 4px;">Attendance Rate</div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="font-size: 0.85rem; font-weight: 600;">🟢 Present: <span id="junior-present-count">0</span></div>
+                  <div style="font-size: 0.85rem; font-weight: 600;">🟡 Late: <span id="junior-late-count">0</span></div>
+                  <div style="font-size: 0.85rem; font-weight: 600;">🔴 Absent: <span id="junior-absent-count">0</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Attendance Log History</h3>
+            <div style="margin-top: 12px; overflow-x: auto;">
+              <table class="task-table" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Check-In Time</th>
+                  </tr>
+                </thead>
+                <tbody id="junior-attendance-history-list">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="view-settings" class="view-container">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1 class="view-title">Workspace Settings</h1>
+              <p class="view-subtitle">Customize theme properties and manage your active session</p>
+            </div>
+          </div>
+
+          <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-bottom: 24px;">
+            <!-- Profile Info Card -->
+            <div class="card" style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 30px;">
+              <div id="settings-user-avatar" style="width: 80px; height: 80px; border-radius: 50%; background-color: var(--primary-color); color: #fff; font-weight: 800; font-size: 2.2rem; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; box-shadow: var(--shadow-md);">AN</div>
+              <h2 id="settings-user-name" style="margin-bottom: 4px;">Animesh</h2>
+              <div id="settings-user-role" class="badge" style="margin-bottom: 20px;">Junior Member</div>
+              
+              <div style="width: 100%; border-top: 1px solid var(--border-color); padding-top: 16px; text-align: left; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+                <div><strong>Email:</strong> <span id="settings-user-email" style="color: var(--text-secondary);">animesh@wazir.in</span></div>
+                <div><strong>Vertical:</strong> <span id="settings-user-vertical" style="color: var(--text-secondary);">PR</span></div>
+              </div>
+            </div>
+
+            <!-- Configuration Options Card -->
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 24px;">
+              <div>
+                <h3 style="margin-bottom: 16px;">App Settings</h3>
+                
+                <!-- Dark Mode Toggle Row -->
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color);">
+                  <div>
+                    <div style="font-weight: 600; font-size: 0.9rem;">Dark Theme</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Switch visual palette to dark Slate theme</div>
+                  </div>
+                  <label class="switch-toggle">
+                    <input type="checkbox" id="dark-mode-toggle" onchange="WazirApp.toggleThemeMode(this.checked)">
+                    <span class="slider-round"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div style="margin-top: 30px;">
+                <button class="btn btn-secondary" onclick="WazirStore.resetStore()" style="width: 100%; padding: 10px; font-size: 0.8rem; margin-bottom: 12px;">Reset Cache Data</button>
+                <button class="btn btn-danger" onclick="WazirApp.handleLogout()" style="width: 100%; padding: 12px; font-weight: 700;">Log Out</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -506,6 +667,63 @@
           </div>
         </div>
 
+        <!-- Admin Attendance Tracker View -->
+        <div id="view-admin-attendance" class="view-container">
+          <div class="view-header">
+            <div class="view-title-group">
+              <h1 class="view-title">Team Attendance Tracker</h1>
+              <p class="view-subtitle">Monitor daily check-ins and track monthly attendance logs for all 10 juniors</p>
+            </div>
+            <!-- Date selection bar -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Date:</span>
+              <input type="date" id="admin-attendance-date-picker" onchange="WazirApp.changeAdminAttendanceDate(this.value)" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-primary); font-weight: 600; font-size: 0.85rem; outline: none;">
+            </div>
+          </div>
+
+          <!-- Summary Grid -->
+          <div class="dashboard-grid" style="margin-bottom: 24px;">
+            <div class="card stat-card border-success">
+              <div class="stat-value" id="admin-att-present-count">0</div>
+              <div class="stat-label">Present Today</div>
+            </div>
+            <div class="card stat-card border-warning">
+              <div class="stat-value" id="admin-att-late-count">0</div>
+              <div class="stat-label">Late Today</div>
+            </div>
+            <div class="card stat-card border-danger">
+              <div class="stat-value" id="admin-att-absent-count">0</div>
+              <div class="stat-label">Absent Today</div>
+            </div>
+            <div class="card stat-card border-primary">
+              <div class="stat-value" id="admin-att-total-rate">100%</div>
+              <div class="stat-label">Overall Rate</div>
+            </div>
+          </div>
+
+          <!-- Attendance Grid -->
+          <div class="card">
+            <h3>Attendance Checklist</h3>
+            <div style="margin-top: 12px; overflow-x: auto;">
+              <table class="task-table" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Junior Member</th>
+                    <th>Vertical</th>
+                    <th>Date</th>
+                    <th>Status Badge</th>
+                    <th>Check-In Time</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-attendance-table-list">
+                  <!-- Dynamically populated with rows for all 10 juniors -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
 
@@ -524,10 +742,13 @@
         <span class="bottom-nav-icon">📝</span>
         <span>Tasks</span>
       </a>
-      <a class="bottom-nav-item" id="mob-nav-notif" onclick="WazirApp.navigate('notifications')">
-        <span class="bottom-nav-icon">🔔</span>
-        <span>Notifs</span>
-        <span class="bottom-nav-badge" id="mob-notif-badge" style="display: none;">0</span>
+      <a class="bottom-nav-item" id="mob-nav-attendance" onclick="WazirApp.navigate('attendance')">
+        <span class="bottom-nav-icon">⏰</span>
+        <span>Attend</span>
+      </a>
+      <a class="bottom-nav-item" id="mob-nav-settings" onclick="WazirApp.navigate('settings')">
+        <span class="bottom-nav-icon">⚙️</span>
+        <span>Settings</span>
       </a>
 
       <!-- Admin Tabs (Swapped programmatically) -->
@@ -543,6 +764,14 @@
         <span class="bottom-nav-icon">⚖️</span>
         <span>Requests</span>
         <span class="bottom-nav-badge" id="mob-request-badge" style="display: none;">0</span>
+      </a>
+      <a class="bottom-nav-item" id="mob-admin-attendance" onclick="WazirApp.navigate('admin-attendance')" style="display: none;">
+        <span class="bottom-nav-icon">📅</span>
+        <span>Attend</span>
+      </a>
+      <a class="bottom-nav-item" id="mob-admin-settings" onclick="WazirApp.navigate('settings')" style="display: none;">
+        <span class="bottom-nav-icon">⚙️</span>
+        <span>Settings</span>
       </a>
     </nav>
 

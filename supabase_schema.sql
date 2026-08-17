@@ -2,6 +2,7 @@
 -- Paste this script into the Supabase SQL Editor and click 'Run'
 
 -- Drop existing tables if they exist
+DROP TABLE IF EXISTS attendance CASCADE;
 DROP TABLE IF EXISTS email_logs CASCADE;
 DROP TABLE IF EXISTS notifications CASCADE;
 DROP TABLE IF EXISTS requests CASCADE;
@@ -25,7 +26,7 @@ CREATE TABLE tasks (
   description text,
   vertical text NOT NULL,
   priority text NOT NULL,
-  deadline text NOT NULL, -- Stored as ISO string to simplify client timezone parsing
+  deadline text NOT NULL, -- Stored as ISO string to simplify timezone parsing
   "assignedBy" text NOT NULL,
   "juniorId" text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   status text NOT NULL,
@@ -69,13 +70,23 @@ CREATE TABLE email_logs (
   "taskId" text NOT NULL REFERENCES tasks(id) ON DELETE CASCADE
 );
 
--- Enable Row Level Security (RLS) or bypass for simplicity
--- Since this is a collaborative dashboard, we can let the anon client read/write all tables.
+-- 6. Create Attendance Table
+CREATE TABLE attendance (
+  id text PRIMARY KEY,
+  "juniorId" text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  date text NOT NULL, -- Stored in YYYY-MM-DD format
+  status text NOT NULL CHECK (status IN ('Present', 'Absent', 'Late')),
+  "checkInTime" text, -- ISO string when checked in
+  UNIQUE("juniorId", date) -- A junior can only have one attendance log per day!
+);
+
+-- Disable Row Level Security (RLS) for simple testing
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks DISABLE ROW LEVEL SECURITY;
 ALTER TABLE requests DISABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
 ALTER TABLE email_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE attendance DISABLE ROW LEVEL SECURITY;
 
 -- Seed Database with the 10 Juniors & Admin
 INSERT INTO users (id, name, email, role, vertical, avatar) VALUES
@@ -218,4 +229,24 @@ INSERT INTO email_logs (id, "to", subject, body, "sentAt", "taskId") VALUES
         </div>
       </div>
     ', '2026-08-15T12:00:00', 'task_4')
+ON CONFLICT (id) DO NOTHING;
+
+-- Seed Database with Sample Attendance Logs
+INSERT INTO attendance (id, "juniorId", date, status, "checkInTime") VALUES
+  ('att_1', 'junior_animesh', '2026-08-17', 'Present', '2026-08-17T09:15:00'),
+  ('att_2', 'junior_avi', '2026-08-17', 'Present', '2026-08-17T09:05:00'),
+  ('att_3', 'junior_nandini', '2026-08-17', 'Late', '2026-08-17T09:45:00'),
+  ('att_4', 'junior_ishika', '2026-08-17', 'Present', '2026-08-17T09:10:00'),
+  ('att_5', 'junior_akruti', '2026-08-17', 'Absent', NULL),
+  ('att_6', 'junior_vishaka', '2026-08-17', 'Present', '2026-08-17T09:02:00'),
+  ('att_7', 'junior_harshvardhan', '2026-08-17', 'Present', '2026-08-17T09:20:00'),
+  ('att_8', 'junior_devanshi', '2026-08-17', 'Absent', NULL),
+  ('att_9', 'junior_simarpreet', '2026-08-17', 'Present', '2026-08-17T09:08:00'),
+  ('att_10', 'junior_somansha', '2026-08-17', 'Late', '2026-08-17T09:35:00'),
+  
+  -- Today's attendance (some are present, some haven't checked in yet)
+  ('att_11', 'junior_animesh', '2026-08-18', 'Present', '2026-08-18T09:12:00'),
+  ('att_12', 'junior_nandini', '2026-08-18', 'Present', '2026-08-18T08:55:00'),
+  ('att_13', 'junior_ishika', '2026-08-18', 'Late', '2026-08-18T09:40:00'),
+  ('att_14', 'junior_vishaka', '2026-08-18', 'Present', '2026-08-18T09:05:00')
 ON CONFLICT (id) DO NOTHING;

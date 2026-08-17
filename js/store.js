@@ -14,7 +14,33 @@ const WazirStore = (() => {
   let requests = [];
   let notifications = [];
   let emailLogs = [];
-  let currentUser = 'junior_animesh';
+  let attendance = [];
+  
+  // Workspace UI states
+  let activeRole = 'junior'; // 'junior' or 'admin'
+  let selectedJuniorId = 'junior_animesh'; // Active selected junior in Junior view
+  let isLoggedIn = false;
+  let themeMode = 'light';
+
+  // Seeding constants for local fallback
+  const DEFAULT_ATTENDANCE = [
+    { id: 'att_1', juniorId: 'junior_animesh', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:15:00' },
+    { id: 'att_2', juniorId: 'junior_avi', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:05:00' },
+    { id: 'att_3', juniorId: 'junior_nandini', date: '2026-08-17', status: 'Late', checkInTime: '2026-08-17T09:45:00' },
+    { id: 'att_4', juniorId: 'junior_ishika', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:10:00' },
+    { id: 'att_5', juniorId: 'junior_akruti', date: '2026-08-17', status: 'Absent', checkInTime: null },
+    { id: 'att_6', juniorId: 'junior_vishaka', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:02:00' },
+    { id: 'att_7', juniorId: 'junior_harshvardhan', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:20:00' },
+    { id: 'att_8', juniorId: 'junior_devanshi', date: '2026-08-17', status: 'Absent', checkInTime: null },
+    { id: 'att_9', juniorId: 'junior_simarpreet', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:08:00' },
+    { id: 'att_10', juniorId: 'junior_somansha', date: '2026-08-17', status: 'Late', checkInTime: '2026-08-17T09:35:00' },
+    
+    // Today's attendance (some checked in, some pending)
+    { id: 'att_11', juniorId: 'junior_animesh', date: '2026-08-18', status: 'Present', checkInTime: '2026-08-18T09:12:00' },
+    { id: 'att_12', juniorId: 'junior_nandini', date: '2026-08-18', status: 'Present', checkInTime: '2026-08-18T08:55:00' },
+    { id: 'att_13', juniorId: 'junior_ishika', date: '2026-08-18', status: 'Late', checkInTime: '2026-08-18T09:40:00' },
+    { id: 'att_14', juniorId: 'junior_vishaka', date: '2026-08-18', status: 'Present', checkInTime: '2026-08-18T09:05:00' }
+  ];
 
   // Initialize Supabase Client & Pull Data
   const initSupabase = async () => {
@@ -26,8 +52,18 @@ const WazirStore = (() => {
       // Create Supabase Client
       supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
       
-      // Load current user from session cache
-      currentUser = localStorage.getItem('wazir_current_user') || 'junior_animesh';
+      // Load active UI states
+      activeRole = localStorage.getItem('wazir_active_role') || 'junior';
+      selectedJuniorId = localStorage.getItem('wazir_selected_junior') || 'junior_animesh';
+      isLoggedIn = localStorage.getItem('wazir_logged_in') === 'true';
+      themeMode = localStorage.getItem('wazir_theme') || 'light';
+      
+      // Apply theme mode
+      if (themeMode === 'dark') {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
 
       // Test query to check if users table exists and fetch
       const { data: usersData, error: usersErr } = await supabase.from('users').select('*');
@@ -37,19 +73,21 @@ const WazirStore = (() => {
       usingSupabase = true;
 
       // Fetch remainder tables
-      const [tasksRes, reqsRes, notifsRes, emailRes] = await Promise.all([
+      const [tasksRes, reqsRes, notifsRes, emailRes, attRes] = await Promise.all([
         supabase.from('tasks').select('*'),
         supabase.from('requests').select('*'),
         supabase.from('notifications').select('*'),
-        supabase.from('email_logs').select('*')
+        supabase.from('email_logs').select('*'),
+        supabase.from('attendance').select('*')
       ]);
 
       if (tasksRes.data) tasks = tasksRes.data;
       if (reqsRes.data) requests = reqsRes.data;
       if (notifsRes.data) notifications = notifsRes.data;
       if (emailRes.data) emailLogs = emailRes.data;
+      if (attRes.data) attendance = attRes.data;
 
-      console.log("Connected to Supabase. Loaded", tasks.length, "tasks.");
+      console.log("Connected to Supabase. Loaded", tasks.length, "tasks and", attendance.length, "attendance records.");
 
       // Setup Realtime subscriptions
       setupRealtimeSubscriptions();
@@ -71,7 +109,19 @@ const WazirStore = (() => {
       requests = loadLocal('requests', DEFAULT_REQUESTS);
       notifications = loadLocal('notifications', DEFAULT_NOTIFICATIONS);
       emailLogs = loadLocal('email_logs', DEFAULT_EMAIL_LOGS);
-      currentUser = localStorage.getItem('wazir_current_user') || 'junior_animesh';
+      attendance = loadLocal('attendance', DEFAULT_ATTENDANCE);
+      
+      activeRole = localStorage.getItem('wazir_active_role') || 'junior';
+      selectedJuniorId = localStorage.getItem('wazir_selected_junior') || 'junior_animesh';
+      isLoggedIn = localStorage.getItem('wazir_logged_in') === 'true';
+      themeMode = localStorage.getItem('wazir_theme') || 'light';
+      
+      // Apply theme mode
+      if (themeMode === 'dark') {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
 
       // Auto-migrate from old placeholder names if needed
       if (users.some(u => u.id === 'junior_rahil')) {
@@ -80,14 +130,18 @@ const WazirStore = (() => {
         requests = DEFAULT_REQUESTS;
         notifications = DEFAULT_NOTIFICATIONS;
         emailLogs = DEFAULT_EMAIL_LOGS;
-        currentUser = 'junior_animesh';
+        attendance = DEFAULT_ATTENDANCE;
+        activeRole = 'junior';
+        selectedJuniorId = 'junior_animesh';
         
         localStorage.setItem('wazir_users', JSON.stringify(users));
         localStorage.setItem('wazir_tasks', JSON.stringify(tasks));
         localStorage.setItem('wazir_requests', JSON.stringify(requests));
         localStorage.setItem('wazir_notifications', JSON.stringify(notifications));
         localStorage.setItem('wazir_email_logs', JSON.stringify(emailLogs));
-        localStorage.setItem('wazir_current_user', currentUser);
+        localStorage.setItem('wazir_attendance', JSON.stringify(attendance));
+        localStorage.setItem('wazir_active_role', activeRole);
+        localStorage.setItem('wazir_selected_junior', selectedJuniorId);
       }
     }
   };
@@ -118,6 +172,13 @@ const WazirStore = (() => {
           triggerUIRefresh();
         }
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, async () => {
+        const { data } = await supabase.from('attendance').select('*');
+        if (data) {
+          attendance = data;
+          triggerUIRefresh();
+        }
+      })
       .subscribe();
   };
 
@@ -141,16 +202,73 @@ const WazirStore = (() => {
       return usingSupabase;
     },
 
-    // Current User Session
-    getCurrentUser() {
-      return users.find(u => u.id === currentUser) || users[0];
+    // 2-Workspace Session Managers
+    getActiveRole() {
+      return activeRole;
     },
-    setCurrentUser(id) {
-      currentUser = id;
-      localStorage.setItem('wazir_current_user', id);
+    setActiveRole(role) {
+      activeRole = role;
+      localStorage.setItem('wazir_active_role', role);
+    },
+    getSelectedJuniorId() {
+      return selectedJuniorId;
+    },
+    setSelectedJuniorId(id) {
+      selectedJuniorId = id;
+      localStorage.setItem('wazir_selected_junior', id);
+      triggerUIRefresh();
+    },
+    isLoggedIn() {
+      return isLoggedIn;
+    },
+    logIn(role, juniorId) {
+      isLoggedIn = true;
+      localStorage.setItem('wazir_logged_in', 'true');
+      
+      activeRole = role;
+      localStorage.setItem('wazir_active_role', role);
+      
+      if (role === 'junior' && juniorId) {
+        selectedJuniorId = juniorId;
+        localStorage.setItem('wazir_selected_junior', juniorId);
+      }
+      
+      triggerUIRefresh();
+    },
+    logOut() {
+      isLoggedIn = false;
+      localStorage.setItem('wazir_logged_in', 'false');
+      // clear session caching
+      localStorage.removeItem('wazir_current_user');
+      triggerUIRefresh();
+    },
+    getTheme() {
+      return themeMode;
+    },
+    setTheme(theme) {
+      themeMode = theme;
+      localStorage.setItem('wazir_theme', theme);
+      if (theme === 'dark') {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+      triggerUIRefresh();
+    },
+
+    // Current User Profile Resolution
+    getCurrentUser() {
+      if (activeRole === 'admin') {
+        return users.find(u => u.role === 'admin') || users[users.length - 1];
+      } else {
+        return users.find(u => u.id === selectedJuniorId) || users[0];
+      }
     },
     getUsers() {
       return users;
+    },
+    getJuniors() {
+      return users.filter(u => u.role === 'junior');
     },
     getUser(id) {
       return users.find(u => u.id === id);
@@ -172,7 +290,7 @@ const WazirStore = (() => {
         vertical: taskData.vertical,
         priority: taskData.priority || "Medium",
         deadline: taskData.deadline, 
-        assignedBy: activeUser.role === 'admin' ? activeUser.name : (taskData.assignedBy || "Wazir Senior"),
+        assignedBy: activeRole === 'admin' ? activeUser.name : (taskData.assignedBy || "Wazir Senior"),
         juniorId: taskData.juniorId || activeUser.id,
         status: taskData.status || "Not Started",
         attachments: taskData.attachments || [],
@@ -183,7 +301,7 @@ const WazirStore = (() => {
             date: new Date().toISOString(),
             type: "create",
             details: `Task created and assigned to ${this.getUser(taskData.juniorId || activeUser.id).name} with deadline ${this.formatFriendlyDate(taskData.deadline)}.`,
-            user: activeUser.name
+            user: activeRole === 'admin' ? activeUser.name : "Wazir Senior"
           }
         ]
       };
@@ -202,7 +320,7 @@ const WazirStore = (() => {
         await this.addNotification(
           newTask.juniorId,
           "New Task Assigned",
-          `${activeUser.name} assigned you: "${newTask.name}".`,
+          `You have been assigned: "${newTask.name}".`,
           "task_assigned"
         );
       }
@@ -361,6 +479,47 @@ const WazirStore = (() => {
       }
     },
 
+    // Attendance Methods
+    getAttendanceLogs(dateStr) {
+      return attendance.filter(a => a.date === dateStr);
+    },
+    getJuniorAttendanceSummary(juniorId) {
+      const logs = attendance.filter(a => a.juniorId === juniorId);
+      const present = logs.filter(a => a.status === 'Present').length;
+      const late = logs.filter(a => a.status === 'Late').length;
+      const absent = logs.filter(a => a.status === 'Absent').length;
+      const total = logs.length;
+      const rate = total > 0 ? Math.round(((present + late) / total) * 100) : 100;
+      
+      return { present, late, absent, total, rate, logs };
+    },
+    async markAttendance(juniorId, dateStr, status, checkInTime = null) {
+      const existingIdx = attendance.findIndex(a => a.juniorId === juniorId && a.date === dateStr);
+      const logId = existingIdx >= 0 ? attendance[existingIdx].id : `att_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+      
+      const newLog = {
+        id: logId,
+        juniorId,
+        date: dateStr,
+        status,
+        checkInTime
+      };
+
+      if (existingIdx >= 0) {
+        attendance[existingIdx] = newLog;
+      } else {
+        attendance.push(newLog);
+      }
+
+      syncLocal('attendance', attendance);
+
+      if (usingSupabase) {
+        await supabase.from('attendance').upsert([newLog]);
+      }
+      
+      return newLog;
+    },
+
     // Notifications
     getNotifications(userId) {
       return notifications.filter(n => n.userId === userId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -455,7 +614,8 @@ const WazirStore = (() => {
             supabase.from('email_logs').delete().neq('id', ''),
             supabase.from('notifications').delete().neq('id', ''),
             supabase.from('requests').delete().neq('id', ''),
-            supabase.from('tasks').delete().neq('id', '')
+            supabase.from('tasks').delete().neq('id', ''),
+            supabase.from('attendance').delete().neq('id', '')
           ]);
 
           // Re-insert initial seeding
@@ -463,7 +623,8 @@ const WazirStore = (() => {
             supabase.from('tasks').insert(DEFAULT_TASKS),
             supabase.from('requests').insert(DEFAULT_REQUESTS),
             supabase.from('notifications').insert(DEFAULT_NOTIFICATIONS),
-            supabase.from('email_logs').insert(DEFAULT_EMAIL_LOGS)
+            supabase.from('email_logs').insert(DEFAULT_EMAIL_LOGS),
+            supabase.from('attendance').insert(DEFAULT_ATTENDANCE)
           ]);
         } catch (err) {
           console.error("Error resetting Supabase database:", err.message);
@@ -474,7 +635,9 @@ const WazirStore = (() => {
         localStorage.removeItem('wazir_requests');
         localStorage.removeItem('wazir_notifications');
         localStorage.removeItem('wazir_email_logs');
-        localStorage.removeItem('wazir_current_user');
+        localStorage.removeItem('wazir_attendance');
+        localStorage.removeItem('wazir_active_role');
+        localStorage.removeItem('wazir_selected_junior');
       }
       window.location.reload();
     }

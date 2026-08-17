@@ -20,16 +20,15 @@ const WazirApp = (() => {
     initRouter();
   };
 
-  // Populate user switcher in header
+  // Populate user switcher (redundant since using login, but kept to prevent console errors)
   const populateUserSwitcher = () => {
     const selector = document.getElementById('user-role-select');
+    if (!selector) return;
     const users = WazirStore.getUsers();
     selector.innerHTML = users.map(user => {
       const label = user.role === 'admin' ? `Senior: ${user.name}` : `Junior: ${user.name} (${user.vertical})`;
       return `<option value="${user.id}">${label}</option>`;
     }).join('');
-    
-    // Set active
     selector.value = WazirStore.getCurrentUser().id;
   };
 
@@ -49,9 +48,16 @@ const WazirApp = (() => {
 
   // Handle routing based on role and hash
   const initRouter = () => {
-    if (!window.location.hash) {
-      const activeUser = WazirStore.getCurrentUser();
-      if (activeUser.role === 'admin') {
+    // If not logged in, enforce login page
+    if (!WazirStore.isLoggedIn()) {
+      window.location.hash = '#/login';
+      handleRouting();
+      return;
+    }
+
+    if (!window.location.hash || window.location.hash === '#/login') {
+      const activeRole = WazirStore.getActiveRole();
+      if (activeRole === 'admin') {
         window.location.hash = '#/admin-overview';
       } else {
         window.location.hash = '#/dashboard';
@@ -62,20 +68,30 @@ const WazirApp = (() => {
   };
 
   const handleRouting = () => {
+    // Enforce login screen if logged out
+    if (!WazirStore.isLoggedIn()) {
+      document.getElementById('view-login').style.display = 'flex';
+      document.getElementById('app-shell').style.display = 'none';
+      populateLoginDropdowns();
+      return;
+    }
+
+    // Hide Login overlay, show app shell
+    document.getElementById('view-login').style.display = 'none';
+    document.getElementById('app-shell').style.display = 'flex';
+
     const hash = window.location.hash || '#/dashboard';
-    const activeUser = WazirStore.getCurrentUser();
+    const activeRole = WazirStore.getActiveRole();
     let targetView = hash.replace('#/', '');
 
-    // Sanitize views based on roles
-    if (activeUser.role === 'admin') {
-      // Admin defaults
-      if (!targetView.startsWith('admin-') && targetView !== 'emails') {
+    // Sanitize views based on active role
+    if (activeRole === 'admin') {
+      if (!targetView.startsWith('admin-') && targetView !== 'emails' && targetView !== 'settings') {
         targetView = 'admin-overview';
         window.location.hash = '#/admin-overview';
       }
     } else {
-      // Junior defaults
-      if (targetView.startsWith('admin-') && targetView !== 'emails') {
+      if ((targetView.startsWith('admin-') && targetView !== 'emails' && targetView !== 'settings') || targetView === 'login') {
         targetView = 'dashboard';
         window.location.hash = '#/dashboard';
       }
@@ -88,35 +104,56 @@ const WazirApp = (() => {
   };
 
   const updateThemeClass = () => {
-    const activeUser = WazirStore.getCurrentUser();
-    if (activeUser.role === 'admin') {
-      document.body.className = 'theme-admin';
+    if (!WazirStore.isLoggedIn()) return;
+    
+    const activeRole = WazirStore.getActiveRole();
+    
+    // Sync dark toggle switch state
+    const darkToggle = document.getElementById('dark-mode-toggle');
+    if (darkToggle) {
+      darkToggle.checked = WazirStore.getTheme() === 'dark';
+    }
+
+    updateUserProfileDisplays();
+
+    if (activeRole === 'admin') {
+      document.body.className = 'theme-admin' + (WazirStore.getTheme() === 'dark' ? ' dark-mode' : '');
       document.getElementById('nav-junior-group').style.display = 'none';
       document.getElementById('nav-admin-group').style.display = 'flex';
+      document.getElementById('junior-context-bar').style.display = 'none';
       
       // Update mobile bottom nav elements
       document.getElementById('mob-nav-dash').style.display = 'none';
       document.getElementById('mob-nav-cal').style.display = 'none';
       document.getElementById('mob-nav-tasks').style.display = 'none';
-      document.getElementById('mob-nav-notif').style.display = 'none';
+      document.getElementById('mob-nav-attendance').style.display = 'none';
+      document.getElementById('mob-nav-settings').style.display = 'none';
       
       document.getElementById('mob-admin-dash').style.display = 'flex';
       document.getElementById('mob-admin-tasks').style.display = 'flex';
       document.getElementById('mob-admin-requests').style.display = 'flex';
+      document.getElementById('mob-admin-attendance').style.display = 'flex';
+      document.getElementById('mob-admin-settings').style.display = 'flex';
     } else {
-      document.body.className = 'theme-junior';
+      document.body.className = 'theme-junior' + (WazirStore.getTheme() === 'dark' ? ' dark-mode' : '');
       document.getElementById('nav-junior-group').style.display = 'flex';
       document.getElementById('nav-admin-group').style.display = 'none';
+      document.getElementById('junior-context-bar').style.display = 'flex';
+      
+      populateActiveJuniorSelect();
 
       // Update mobile bottom nav elements
       document.getElementById('mob-nav-dash').style.display = 'flex';
       document.getElementById('mob-nav-cal').style.display = 'flex';
       document.getElementById('mob-nav-tasks').style.display = 'flex';
-      document.getElementById('mob-nav-notif').style.display = 'flex';
+      document.getElementById('mob-nav-attendance').style.display = 'flex';
+      document.getElementById('mob-nav-settings').style.display = 'flex';
       
       document.getElementById('mob-admin-dash').style.display = 'none';
       document.getElementById('mob-admin-tasks').style.display = 'none';
       document.getElementById('mob-admin-requests').style.display = 'none';
+      document.getElementById('mob-admin-attendance').style.display = 'none';
+      document.getElementById('mob-admin-settings').style.display = 'none';
     }
   };
 
@@ -140,9 +177,13 @@ const WazirApp = (() => {
     } else if (viewId === 'tasks') {
       document.querySelector('.app-sidebar [onclick*="tasks"]')?.classList.add('active');
       document.getElementById('mob-nav-tasks')?.classList.add('active');
-    } else if (viewId === 'notifications') {
-      document.querySelector('.app-sidebar [onclick*="notifications"]')?.classList.add('active');
-      document.getElementById('mob-nav-notif')?.classList.add('active');
+    } else if (viewId === 'attendance') {
+      document.querySelector('.app-sidebar [onclick*="attendance"]')?.classList.add('active');
+      document.getElementById('mob-nav-attendance')?.classList.add('active');
+    } else if (viewId === 'settings') {
+      document.querySelector('.app-sidebar [onclick*="settings"]')?.classList.add('active');
+      document.getElementById('mob-nav-settings')?.classList.add('active');
+      document.getElementById('mob-admin-settings')?.classList.add('active');
     } else if (viewId === 'admin-overview') {
       document.querySelector('.app-sidebar [onclick*="admin-overview"]')?.classList.add('active');
       document.getElementById('mob-admin-dash')?.classList.add('active');
@@ -154,6 +195,9 @@ const WazirApp = (() => {
     } else if (viewId === 'admin-requests') {
       document.querySelector('.app-sidebar [onclick*="admin-requests"]')?.classList.add('active');
       document.getElementById('mob-admin-requests')?.classList.add('active');
+    } else if (viewId === 'admin-attendance') {
+      document.querySelector('.app-sidebar [onclick*="admin-attendance"]')?.classList.add('active');
+      document.getElementById('mob-admin-attendance')?.classList.add('active');
     } else if (viewId === 'admin-progress') {
       document.querySelector('.app-sidebar [onclick*="admin-progress"]')?.classList.add('active');
     }
@@ -293,6 +337,15 @@ const WazirApp = (() => {
         break;
       case 'admin-progress':
         renderAdminProgress();
+        break;
+      case 'attendance':
+        renderJuniorAttendance();
+        break;
+      case 'admin-attendance':
+        renderAdminAttendance();
+        break;
+      case 'settings':
+        // Just triggers settings profiles updates on navigations
         break;
     }
   };
@@ -1463,6 +1516,265 @@ const WazirApp = (() => {
     document.getElementById('email-split-container').classList.remove('show-detail');
   };
 
+  // ================= NEW WORKSPACE & ATTENDANCE METHODS =================
+  
+  // Login Controllers
+  const populateLoginDropdowns = () => {
+    const select = document.getElementById('login-junior-select');
+    if (!select || select.children.length > 0) return;
+    select.innerHTML = '';
+    const juniors = WazirStore.getJuniors();
+    juniors.forEach(j => {
+      const opt = document.createElement('option');
+      opt.value = j.id;
+      opt.textContent = `${j.name} (${j.vertical})`;
+      select.appendChild(opt);
+    });
+  };
+
+  const populateActiveJuniorSelect = () => {
+    const select = document.getElementById('active-junior-select');
+    if (!select) return;
+    if (select.children.length === 0) {
+      select.innerHTML = '';
+      const juniors = WazirStore.getJuniors();
+      juniors.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j.id;
+        opt.textContent = `${j.name} (${j.vertical})`;
+        select.appendChild(opt);
+      });
+    }
+    select.value = WazirStore.getSelectedJuniorId();
+  };
+
+  const updateUserProfileDisplays = () => {
+    const user = WazirStore.getCurrentUser();
+    if (!user) return;
+
+    const headerAvatar = document.getElementById('header-user-avatar');
+    const headerName = document.getElementById('header-user-name');
+    if (headerAvatar) headerAvatar.textContent = user.avatar;
+    if (headerName) headerName.textContent = user.name;
+
+    const settingsAvatar = document.getElementById('settings-user-avatar');
+    const settingsName = document.getElementById('settings-user-name');
+    const settingsRole = document.getElementById('settings-user-role');
+    const settingsEmail = document.getElementById('settings-user-email');
+    const settingsVertical = document.getElementById('settings-user-vertical');
+
+    if (settingsAvatar) settingsAvatar.textContent = user.avatar;
+    if (settingsName) settingsName.textContent = user.name;
+    if (settingsRole) {
+      settingsRole.textContent = user.role === 'admin' ? 'Senior Administrator' : 'Junior Member';
+      settingsRole.className = user.role === 'admin' ? 'badge badge-rose' : 'badge';
+    }
+    if (settingsEmail) settingsEmail.textContent = user.email;
+    if (settingsVertical) settingsVertical.textContent = user.vertical;
+  };
+
+  const handleLoginSubmit = (event) => {
+    event.preventDefault();
+    const role = document.getElementById('login-role-select').value;
+    
+    if (role === 'admin') {
+      const passwordInput = document.getElementById('login-password-input');
+      const password = passwordInput ? passwordInput.value : '';
+      if (password === 'STWazir') {
+        if (passwordInput) passwordInput.value = '';
+        WazirStore.logIn('admin');
+        showToast("Logged in as Wazir Senior.", "success");
+        window.location.hash = '#/admin-overview';
+      } else {
+        showToast("Incorrect password. Access denied.", "danger");
+      }
+    } else {
+      const juniorId = document.getElementById('login-junior-select').value;
+      const junior = WazirStore.getUser(juniorId);
+      WazirStore.logIn('junior', juniorId);
+      showToast(`Logged in as ${junior.name} (${junior.vertical}).`, "success");
+      window.location.hash = '#/dashboard';
+    }
+  };
+
+  const toggleLoginFields = (role) => {
+    const juniorGroup = document.getElementById('login-junior-group');
+    const passwordGroup = document.getElementById('login-password-group');
+    if (role === 'admin') {
+      if (juniorGroup) juniorGroup.style.display = 'none';
+      if (passwordGroup) passwordGroup.style.display = 'block';
+    } else {
+      if (juniorGroup) juniorGroup.style.display = 'block';
+      if (passwordGroup) passwordGroup.style.display = 'none';
+    }
+  };
+
+  const handleLogout = () => {
+    WazirStore.logOut();
+    showToast("Logged out successfully.", "info");
+    window.location.hash = '#/login';
+  };
+
+  const toggleThemeMode = (isDark) => {
+    WazirStore.setTheme(isDark ? 'dark' : 'light');
+    showToast(`Theme updated to ${isDark ? 'Dark' : 'Light'} Mode.`, "success");
+  };
+
+  const changeActiveJunior = (juniorId) => {
+    WazirStore.setSelectedJuniorId(juniorId);
+    const junior = WazirStore.getUser(juniorId);
+    showToast(`Switched active profile to ${junior.name} (${junior.vertical})`, "success");
+    updateThemeClass();
+    renderView(currentView);
+  };
+
+  // Junior Attendance Controllers
+  const renderJuniorAttendance = () => {
+    const junior = WazirStore.getCurrentUser();
+    const today = new Date().toISOString().split('T')[0];
+    const friendlyToday = WazirStore.formatFriendlyDate(new Date().toISOString()).split(',')[0];
+    document.getElementById('checkin-date-display').textContent = friendlyToday;
+
+    const logsSummary = WazirStore.getJuniorAttendanceSummary(junior.id);
+    
+    document.getElementById('junior-attendance-rate').textContent = `${logsSummary.rate}%`;
+    document.getElementById('junior-present-count').textContent = logsSummary.present;
+    document.getElementById('junior-late-count').textContent = logsSummary.late;
+    document.getElementById('junior-absent-count').textContent = logsSummary.absent;
+
+    const logs = logsSummary.logs;
+    const todayLog = logs.find(l => l.date === today);
+    const badge = document.getElementById('checkin-status-badge');
+    const actions = document.getElementById('checkin-actions');
+
+    if (todayLog) {
+      badge.textContent = `Checked-In: ${todayLog.status}`;
+      badge.className = `badge ${todayLog.status === 'Present' ? 'badge-success' : todayLog.status === 'Late' ? 'badge-warning' : 'badge-danger'}`;
+      actions.style.display = 'none';
+    } else {
+      badge.textContent = "Pending Check-In";
+      badge.className = "badge badge-neutral";
+      actions.style.display = 'flex';
+    }
+
+    const tbody = document.getElementById('junior-attendance-history-list');
+    tbody.innerHTML = '';
+    
+    if (logs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">No logs recorded.</td></tr>`;
+      return;
+    }
+
+    logs.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(log => {
+      const tr = document.createElement('tr');
+      const badgeClass = log.status === 'Present' ? 'badge-success' : log.status === 'Late' ? 'badge-warning' : 'badge-danger';
+      tr.innerHTML = `
+        <td><strong>${WazirStore.formatFriendlyDate(log.date + "T00:00:00").split(',')[0]}</strong></td>
+        <td><span class="badge ${badgeClass}">${log.status}</span></td>
+        <td>${log.checkInTime ? WazirStore.formatFriendlyDate(log.checkInTime).split(',')[1].trim() : '—'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  };
+
+  const markJuniorCheckIn = async (status) => {
+    const junior = WazirStore.getCurrentUser();
+    const today = new Date().toISOString().split('T')[0];
+    const checkInTime = new Date().toISOString();
+    
+    try {
+      await WazirStore.markAttendance(junior.id, today, status, checkInTime);
+      showToast(`Checked in successfully as ${status}!`, "success");
+      renderJuniorAttendance();
+    } catch (err) {
+      showToast(err.message, "danger");
+    }
+  };
+
+  // Admin Attendance Controllers
+  let adminAttDate = new Date().toISOString().split('T')[0];
+
+  const renderAdminAttendance = () => {
+    const picker = document.getElementById('admin-attendance-date-picker');
+    if (picker) {
+      picker.value = adminAttDate;
+    }
+
+    const juniors = WazirStore.getJuniors();
+    const logs = WazirStore.getAttendanceLogs(adminAttDate);
+
+    let present = 0;
+    let late = 0;
+    let absent = 0;
+
+    juniors.forEach(j => {
+      const log = logs.find(l => l.juniorId === j.id);
+      if (log) {
+        if (log.status === 'Present') present++;
+        else if (log.status === 'Late') late++;
+        else if (log.status === 'Absent') absent++;
+      } else {
+        absent++;
+      }
+    });
+
+    const total = juniors.length;
+    const rate = total > 0 ? Math.round(((present + late) / total) * 100) : 100;
+
+    document.getElementById('admin-att-present-count').textContent = present;
+    document.getElementById('admin-att-late-count').textContent = late;
+    document.getElementById('admin-att-absent-count').textContent = absent;
+    document.getElementById('admin-att-total-rate').textContent = `${rate}%`;
+
+    const tbody = document.getElementById('admin-attendance-table-list');
+    tbody.innerHTML = '';
+
+    juniors.forEach(j => {
+      const log = logs.find(l => l.juniorId === j.id);
+      const logStatus = log ? log.status : 'Absent (Unmarked)';
+      const badgeClass = logStatus === 'Present' ? 'badge-success' : logStatus === 'Late' ? 'badge-warning' : 'badge-danger';
+      const checkInLabel = log && log.checkInTime ? WazirStore.formatFriendlyDate(log.checkInTime).split(',')[1].trim() : '—';
+      
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:28px; height:28px; border-radius:50%; background-color:var(--primary-color); color:#fff; font-weight:700; font-size:0.75rem; display:flex; align-items:center; justify-content:center;">${j.avatar}</div>
+            <strong style="color:var(--text-primary);">${j.name}</strong>
+          </div>
+        </td>
+        <td><span class="badge">${j.vertical}</span></td>
+        <td>${adminAttDate}</td>
+        <td><span class="badge ${badgeClass}">${logStatus}</span></td>
+        <td>${checkInLabel}</td>
+        <td style="text-align: right;">
+          <div style="display: flex; gap: 4px; justify-content: flex-end;">
+            <button class="btn btn-secondary btn-sm" onclick="WazirApp.markJuniorAttendanceByAdmin('${j.id}', 'Present')">Present</button>
+            <button class="btn btn-secondary btn-sm" onclick="WazirApp.markJuniorAttendanceByAdmin('${j.id}', 'Late')">Late</button>
+            <button class="btn btn-danger btn-sm" onclick="WazirApp.markJuniorAttendanceByAdmin('${j.id}', 'Absent')">Absent</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  };
+
+  const changeAdminAttendanceDate = (value) => {
+    adminAttDate = value;
+    renderAdminAttendance();
+  };
+
+  const markJuniorAttendanceByAdmin = async (juniorId, status) => {
+    const checkInTime = status === 'Absent' ? null : new Date().toISOString();
+    try {
+      await WazirStore.markAttendance(juniorId, adminAttDate, status, checkInTime);
+      showToast(`Marked ${WazirStore.getUser(juniorId).name} as ${status}`, "success");
+      renderAdminAttendance();
+    } catch (err) {
+      showToast(err.message, "danger");
+    }
+  };
+
   return {
     init,
     navigate,
@@ -1471,6 +1783,20 @@ const WazirApp = (() => {
     applyFilters,
     markNotifRead,
     markAllNotificationsRead,
+    
+    // Login and active session utilities
+    handleLoginSubmit,
+    toggleLoginFields,
+    handleLogout,
+    toggleThemeMode,
+    changeActiveJunior,
+    
+    // Attendance actions
+    renderJuniorAttendance,
+    markJuniorCheckIn,
+    renderAdminAttendance,
+    changeAdminAttendanceDate,
+    markJuniorAttendanceByAdmin,
     
     // Dialog actions
     openDialog,

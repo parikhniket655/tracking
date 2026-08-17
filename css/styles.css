@@ -1785,3 +1785,224 @@ textarea + .voice-btn.recording {
   100% { transform: scale(1); opacity: 1; }
 }
 
+
+/* ================= DARK MODE OVERRIDES ================= */
+body.dark-mode {
+  --bg-app: #0b0f19;
+  --bg-card: #151d30;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  --border-color: #24324d;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+body.dark-mode input:focus,
+body.dark-mode textarea:focus,
+body.dark-mode select:focus {
+  border-color: var(--primary-color);
+  background-color: #1e293b;
+}
+body.dark-mode dialog {
+  background-color: #151d30;
+  color: #f1f5f9;
+  border-color: #24324d;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+body.dark-mode .calendar-day {
+  background-color: #0b0f19;
+}
+body.dark-mode .calendar-day.empty {
+  background-color: transparent;
+}
+body.dark-mode .nav-item {
+  color: #cbd5e1;
+}
+body.dark-mode .nav-item:hover {
+  background-color: #1e293b;
+}
+body.dark-mode .nav-item.active {
+  background-color: rgba(79, 70, 229, 0.2);
+  color: #818cf8;
+}
+body.theme-admin.dark-mode .nav-item.active {
+  background-color: rgba(225, 29, 72, 0.2);
+  color: #fda4af;
+}
+body.dark-mode .email-rendered-card {
+  background-color: #151d30;
+  border-color: #24324d;
+}
+body.dark-mode .email-content-box {
+  background-color: #0b0f19;
+}
+body.dark-mode .voice-btn {
+  background-color: #24324d;
+  border-color: #334155;
+}
+body.dark-mode .task-card {
+  background-color: #151d30;
+  border-color: #24324d;
+}
+body.dark-mode .card {
+  background-color: #151d30;
+  border-color: #24324d;
+}
+body.dark-mode .badge {
+  background-color: #24324d;
+  color: #cbd5e1;
+}
+body.dark-mode .task-table th {
+  background-color: #1e293b;
+  border-bottom: 2px solid #24324d;
+  color: #f1f5f9;
+}
+body.dark-mode .task-table td {
+  border-bottom: 1px solid #24324d;
+}
+body.dark-mode .task-table tr:hover {
+  background-color: #1e293b;
+}
+body.dark-mode .context-bar {
+  background-color: #151d30;
+  border-color: #24324d;
+}
+body.dark-mode .context-bar select {
+  background-color: #0b0f19;
+  border-color: #24324d;
+  color: #f1f5f9;
+}
+
+
+/* ================= LOGIN STYLES ================= */
+.login-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-app);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+.login-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  animation: fadeIn 0.4s ease-out;
+}
+.login-logo {
+  width: 60px;
+  height: 60px;
+  background-color: var(--primary-color);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+.login-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.login-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  font-weight: 600;
+}
+.form-group {
+  margin-bottom: 16px;
+  text-align: left;
+}
+.form-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.form-control {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  outline: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+
+/* ================= SWITCH TOGGLE ================= */
+.switch-toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+.switch-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider-round {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .3s;
+  border-radius: 24px;
+}
+.slider-round:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+.switch-toggle input:checked + .slider-round {
+  background-color: var(--primary-color);
+}
+.switch-toggle input:checked + .slider-round:before {
+  transform: translateX(24px);
+}
+
+
