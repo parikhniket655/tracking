@@ -1794,7 +1794,18 @@ const WazirApp = (() => {
       const isSunday = targetDate.getDay() === 0;
       const dateStr = `${targetDate.getFullYear()}-${(targetDate.getMonth() + 1).toString().padStart(2, '0')}-${targetDate.getDate().toString().padStart(2, '0')}`;
 
+      // Check if targetDate is in the future relative to the client local time
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const cellDate = new Date(targetDate);
+      cellDate.setHours(0,0,0,0);
+      const isFuture = cellDate > today;
+
       let cellHTML = `<div class="day-number" style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">${dayNum}</div>`;
+      
+      // Override flex styles to stack items top-to-bottom cleanly
+      cell.style.justifyContent = 'flex-start';
+      cell.style.gap = '2px';
 
       if (isSunday) {
         cell.style.pointerEvents = 'none';
@@ -1802,6 +1813,10 @@ const WazirApp = (() => {
         cell.style.background = 'transparent';
         cell.style.borderStyle = 'dashed';
         cellHTML += `<div style="font-size:0.65rem; color:var(--text-muted); font-weight:700; margin-top:2px;">SUNDAY</div>`;
+      } else if (isFuture) {
+        cell.style.opacity = '0.35';
+        cell.style.pointerEvents = 'none';
+        // Future date: hide attendance stats
       } else {
         // Attendance logs for this date
         const logs = WazirStore.getAttendanceLogs(dateStr);
@@ -1817,13 +1832,31 @@ const WazirApp = (() => {
           }
         });
 
-        // Set content
+        // Show present count as a green pill tile
         cellHTML += `
-          <div style="font-size:0.75rem; font-weight:700; color:var(--color-priority-low); margin-top:2px;">🟢 ${presentCount} Present</div>
-          <div style="font-size:0.65rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;" title="${absentees.join(', ')}">
-            ${absentees.length > 0 ? `🔴 ${absentees.join(', ')}` : '🎉 Full Team'}
-          </div>
+          <span class="badge badge-success" style="font-size:0.65rem; font-weight:700; padding: 2px 6px; margin-top:2px; display:inline-flex; border: none; align-self:flex-start;">
+            ${presentCount} Present
+          </span>
         `;
+
+        // Show absentees as red pill tiles
+        if (absentees.length > 0) {
+          const absenteeTiles = absentees.map(name => 
+            `<span class="badge badge-danger" style="font-size:0.55rem; padding: 1px 4px; font-weight:600; border: none; white-space:nowrap; text-transform:none;">${name}</span>`
+          ).join('');
+          
+          cellHTML += `
+            <div style="display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; max-height: 54px; overflow-y: auto;">
+              ${absenteeTiles}
+            </div>
+          `;
+        } else {
+          cellHTML += `
+            <div style="display:flex; flex-wrap:wrap; gap:3px; margin-top:4px;">
+              <span class="badge badge-neutral" style="font-size:0.55rem; padding: 1px 4px; border: none; text-transform:none;">🎉 Full Team</span>
+            </div>
+          `;
+        }
 
         if (!isOtherMonth) {
           cell.onclick = () => WazirApp.openEditAttendanceDialog(dateStr);
