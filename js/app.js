@@ -272,7 +272,7 @@ const WazirApp = (() => {
     // Check password if switching to Wazir Senior view
     if (userId === 'admin_senior') {
       const password = prompt("Enter Wazir Senior password to access Admin panel:");
-      if (password !== 'STWazir') {
+      if (password !== 'STWazir8') {
         showToast("Access Denied: Incorrect password.", "danger");
         // Revert dropdown selection to previous user
         document.getElementById('user-role-select').value = currentUser.id;
@@ -1578,7 +1578,7 @@ const WazirApp = (() => {
     const currentRole = WazirStore.getActiveRole();
     if (currentRole === 'junior') {
       const password = prompt("Enter Senior password to switch workspace:");
-      if (password === 'STWazir') {
+      if (password === 'STWazir8') {
         WazirStore.logIn('admin');
         showToast("Switched to Senior Workspace.", "success");
         window.location.hash = '#/admin-overview';
@@ -1604,7 +1604,7 @@ const WazirApp = (() => {
     if (role === 'admin') {
       const passwordInput = document.getElementById('login-password-input');
       const password = passwordInput ? passwordInput.value : '';
-      if (password === 'STWazir') {
+      if (password === 'STWazir8') {
         if (passwordInput) passwordInput.value = '';
         WazirStore.logIn('admin');
         showToast("Logged in as Wazir Senior.", "success");
