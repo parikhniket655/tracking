@@ -247,22 +247,8 @@ const WazirApp = (() => {
 
   // Toast System
   const showToast = (message, type = "info") => {
-    const container = document.getElementById('toast-outlet');
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    
-    const icon = type === "success" ? "✅" : type === "danger" ? "🚨" : type === "warning" ? "⚠️" : "ℹ️";
-    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
-    
-    container.appendChild(toast);
-    
-    // Remove after 4s
-    setTimeout(() => {
-      toast.classList.add('removing');
-      toast.addEventListener('animationend', () => {
-        toast.remove();
-      });
-    }, 4000);
+    // Disabled popup toast notification cards
+    return;
   };
 
   // Switch Users Trigger
