@@ -398,20 +398,17 @@
                 <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px;">
                   If attendance logged on one device does not reflect on other devices, run this 1-click SQL in your <strong>Supabase SQL Editor</strong> to grant unrestricted cross-device access:
                 </div>
-                <pre style="background-color: var(--bg-card); padding: 8px 12px; border-radius: 6px; font-size: 0.7rem; color: var(--color-primary); overflow-x: auto; margin-bottom: 10px; font-family: monospace; border: 1px solid var(--border-color);">CREATE TABLE IF NOT EXISTS attendance (
-  id text PRIMARY KEY,
-  "juniorId" text NOT NULL,
-  date text NOT NULL,
-  status text NOT NULL,
-  "checkInTime" text
-);
+                <pre style="background-color: var(--bg-card); padding: 8px 12px; border-radius: 6px; font-size: 0.7rem; color: var(--color-primary); overflow-x: auto; margin-bottom: 10px; font-family: monospace; border: 1px solid var(--border-color);">GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
 
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks DISABLE ROW LEVEL SECURITY;
 ALTER TABLE requests DISABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
 ALTER TABLE email_logs DISABLE ROW LEVEL SECURITY;
-ALTER TABLE attendance DISABLE ROW LEVEL SECURITY;</pre>
+ALTER TABLE attendance DISABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "allow_anon_attendance" ON attendance;
+CREATE POLICY "allow_anon_attendance" ON attendance FOR ALL TO anon USING (true) WITH CHECK (true);</pre>
                 <button class="btn btn-secondary btn-sm" onclick="WazirApp.copySupabaseSetupSQL()" style="width: 100%; font-size: 0.75rem; padding: 6px 12px;">📋 Copy SQL Setup Command</button>
               </div>
 
