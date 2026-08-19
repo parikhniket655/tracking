@@ -1951,7 +1951,6 @@ const WazirApp = (() => {
 
   return {
     init,
-    refreshCurrentView,
     navigate,
     showToast,
     copySupabaseSetupSQL,
