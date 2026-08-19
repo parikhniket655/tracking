@@ -63,7 +63,25 @@ const WazirStore = (() => {
         document.body.classList.remove('dark-mode');
       }
 
-      // Test query to check if users table exists and fetch
+      // Helper to safely load local storage with fallback
+      const loadLocal = (key, fallback) => {
+        try {
+          const val = localStorage.getItem(`wazir_${key}`);
+          return val ? JSON.parse(val) : fallback;
+        } catch (e) {
+          return fallback;
+        }
+      };
+
+      // Always initialize memory arrays from localStorage persistent state first
+      users = loadLocal('users', DEFAULT_USERS);
+      tasks = loadLocal('tasks', DEFAULT_TASKS);
+      requests = loadLocal('requests', DEFAULT_REQUESTS);
+      notifications = loadLocal('notifications', DEFAULT_NOTIFICATIONS);
+      emailLogs = loadLocal('email_logs', DEFAULT_EMAIL_LOGS);
+      attendance = loadLocal('attendance', DEFAULT_ATTENDANCE);
+
+      // Test query to check if users table exists and fetch from Supabase
       const { data: usersData, error: usersErr } = await supabase.from('users').select('*');
       if (usersErr) throw usersErr;
 
@@ -71,12 +89,12 @@ const WazirStore = (() => {
 
       if (usersData && usersData.length > 0) {
         users = usersData;
+        syncLocal('users', users);
       } else {
-        users = DEFAULT_USERS;
-        await supabase.from('users').upsert(DEFAULT_USERS).catch(e => console.warn("Users auto-seed error:", e.message));
+        await supabase.from('users').upsert(users).catch(e => console.warn("Users auto-seed error:", e.message));
       }
 
-      // Fetch remainder tables
+      // Fetch remainder tables from Supabase Cloud
       const [tasksRes, reqsRes, notifsRes, emailRes, attRes] = await Promise.all([
         supabase.from('tasks').select('*'),
         supabase.from('requests').select('*'),
@@ -85,29 +103,49 @@ const WazirStore = (() => {
         supabase.from('attendance').select('*')
       ]);
 
+      // Merge Cloud Tasks with Local Tasks
       if (tasksRes.data && tasksRes.data.length > 0) {
         tasks = tasksRes.data;
-      } else {
-        tasks = DEFAULT_TASKS;
-        await supabase.from('tasks').upsert(DEFAULT_TASKS).catch(e => console.warn("Tasks auto-seed error:", e.message));
+        syncLocal('tasks', tasks);
+      } else if (tasks.length > 0) {
+        await supabase.from('tasks').upsert(tasks).catch(e => console.warn("Tasks sync error:", e.message));
       }
 
-      if (reqsRes.data && reqsRes.data.length > 0) requests = reqsRes.data;
-      if (notifsRes.data && notifsRes.data.length > 0) notifications = notifsRes.data;
-      if (emailRes.data && emailRes.data.length > 0) emailLogs = emailRes.data;
-
-      if (attRes.error) {
-        console.warn("Attendance table error on Supabase:", attRes.error.message);
-        const val = localStorage.getItem('wazir_attendance');
-        attendance = val ? JSON.parse(val) : DEFAULT_ATTENDANCE;
-      } else if (attRes.data && attRes.data.length > 0) {
-        attendance = attRes.data;
-      } else {
-        attendance = DEFAULT_ATTENDANCE;
-        await supabase.from('attendance').upsert(DEFAULT_ATTENDANCE).catch(e => console.warn("Attendance auto-seed error:", e.message));
+      if (reqsRes.data && reqsRes.data.length > 0) {
+        requests = reqsRes.data;
+        syncLocal('requests', requests);
+      }
+      if (notifsRes.data && notifsRes.data.length > 0) {
+        notifications = notifsRes.data;
+        syncLocal('notifications', notifications);
+      }
+      if (emailRes.data && emailRes.data.length > 0) {
+        emailLogs = emailRes.data;
+        syncLocal('email_logs', emailLogs);
       }
 
-      console.log("Connected to Supabase Cloud. Loaded", tasks.length, "tasks and", attendance.length, "attendance records.");
+      // Merge Cloud Attendance with Local Attendance (Never overwrite local data with defaults if local has recorded entries!)
+      if (attRes.data && attRes.data.length > 0) {
+        // Merge Supabase entries with local entries (local recorded entries take precedence if absent in cloud)
+        const mergedAttMap = new Map();
+        attRes.data.forEach(a => mergedAttMap.set(`${a.juniorId}_${a.date}`, a));
+        attendance.forEach(a => {
+          const key = `${a.juniorId}_${a.date}`;
+          if (!mergedAttMap.has(key)) {
+            mergedAttMap.set(key, a);
+          }
+        });
+        attendance = Array.from(mergedAttMap.values());
+        syncLocal('attendance', attendance);
+        
+        // Push any missing local attendance to Supabase
+        await supabase.from('attendance').upsert(attendance).catch(e => console.warn("Attendance upsert sync warning:", e.message));
+      } else if (attendance.length > 0) {
+        // If Supabase attendance table is empty, upload all local attendance records
+        await supabase.from('attendance').upsert(attendance).catch(e => console.warn("Attendance auto-seed error:", e.message));
+      }
+
+      console.log("Connected to Supabase Cloud. Active records:", tasks.length, "tasks,", attendance.length, "attendance entries.");
 
       // Setup Realtime subscriptions and 4-second cross-device polling loop
       setupRealtimeSubscriptions();
@@ -246,10 +284,12 @@ const WazirStore = (() => {
     }
   };
 
-  // Sync helper for Local fallback
+  // Sync helper for Local persistent safety net
   const syncLocal = (key, data) => {
-    if (!usingSupabase) {
+    try {
       localStorage.setItem(`wazir_${key}`, JSON.stringify(data));
+    } catch (e) {
+      console.warn("localStorage write error:", e);
     }
   };
 
