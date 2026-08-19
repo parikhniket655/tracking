@@ -29,17 +29,15 @@ const WazirStore = (() => {
     { id: 'att_3', juniorId: 'junior_nandini', date: '2026-08-17', status: 'Late', checkInTime: '2026-08-17T09:45:00' },
     { id: 'att_4', juniorId: 'junior_ishika', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:10:00' },
     { id: 'att_5', juniorId: 'junior_akruti', date: '2026-08-17', status: 'Absent', checkInTime: null },
-    { id: 'att_6', juniorId: 'junior_vishaka', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:02:00' },
-    { id: 'att_7', juniorId: 'junior_harshvardhan', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:20:00' },
-    { id: 'att_8', juniorId: 'junior_devanshi', date: '2026-08-17', status: 'Absent', checkInTime: null },
-    { id: 'att_9', juniorId: 'junior_simarpreet', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:08:00' },
-    { id: 'att_10', juniorId: 'junior_somansha', date: '2026-08-17', status: 'Late', checkInTime: '2026-08-17T09:35:00' },
-    
-    // Today's attendance (some checked in, some pending)
-    { id: 'att_11', juniorId: 'junior_animesh', date: '2026-08-18', status: 'Present', checkInTime: '2026-08-18T09:12:00' },
-    { id: 'att_12', juniorId: 'junior_nandini', date: '2026-08-18', status: 'Present', checkInTime: '2026-08-18T08:55:00' },
-    { id: 'att_13', juniorId: 'junior_ishika', date: '2026-08-18', status: 'Late', checkInTime: '2026-08-18T09:40:00' },
-    { id: 'att_14', juniorId: 'junior_vishaka', date: '2026-08-18', status: 'Present', checkInTime: '2026-08-18T09:05:00' }
+    { id: 'att_6', juniorId: 'junior_vishakha', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:02:00' },
+    { id: 'att_7', juniorId: 'junior_harshvardhan', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:12:00' },
+    { id: 'att_8', juniorId: 'junior_devanshi', date: '2026-08-17', status: 'Late', checkInTime: '2026-08-17T10:15:00' },
+    { id: 'att_9', juniorId: 'junior_simarpreet', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:00:00' },
+    { id: 'att_10', juniorId: 'junior_somansha', date: '2026-08-17', status: 'Present', checkInTime: '2026-08-17T09:05:00' },
+    { id: 'att_11', juniorId: 'junior_animesh', date: '2026-08-18', status: 'Present', checkInTime: '2026-08-18T08:50:00' },
+    { id: 'att_12', juniorId: 'junior_avi', date: '2026-08-18', status: 'Present', checkInTime: '2026-08-18T09:00:00' },
+    { id: 'att_13', juniorId: 'junior_nandini', date: '2026-08-18', status: 'Present', checkInTime: '2026-08-18T08:58:00' },
+    { id: 'att_14', juniorId: 'junior_vishakha', date: '2026-08-18', status: 'Present', checkInTime: '2026-08-18T09:05:00' }
   ];
 
   // Initialize Supabase Client & Pull Data

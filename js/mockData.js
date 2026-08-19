@@ -43,9 +43,9 @@ const DEFAULT_USERS = [
     avatar: "AK"
   },
   {
-    id: "junior_vishaka",
-    name: "Vishaka",
-    email: "vishaka@wazir.in",
+    id: "junior_vishakha",
+    name: "Vishakha",
+    email: "vishakha@wazir.in",
     role: "junior",
     vertical: "CaseBook",
     avatar: "VI"
@@ -160,7 +160,7 @@ const DEFAULT_TASKS = [
     priority: "Low",
     deadline: "2026-08-19T23:59:00",
     assignedBy: "Wazir Senior",
-    juniorId: "junior_vishaka",
+    juniorId: "junior_vishakha",
     status: "Not Started",
     attachments: [],
     notes: "Review past templates for financial reporting structure.",
@@ -169,7 +169,7 @@ const DEFAULT_TASKS = [
       {
         date: "2026-08-13T16:00:00",
         type: "create",
-        details: "Task created and assigned to Vishaka.",
+        details: "Task created and assigned to Vishakha.",
         user: "Wazir Senior"
       }
     ]

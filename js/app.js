@@ -1840,7 +1840,7 @@ const WazirApp = (() => {
 
         // Show present count as a green pill tile
         cellHTML += `
-          <span class="badge badge-success att-present-badge" style="font-size:0.65rem; font-weight:700; padding: 2px 6px; margin-top:2px; display:inline-flex; border: none; align-self:flex-start;">
+          <span class="badge badge-success att-present-badge" style="font-size:0.65rem; font-weight:700; padding: 2px 6px; margin-top:2px; display:inline-flex; border: none; align-self:flex-start; text-transform:none;">
             ${presentCount} Present
           </span>
         `;
@@ -1852,8 +1852,11 @@ const WazirApp = (() => {
           ).join('');
           
           cellHTML += `
-            <div class="att-absentee-list" style="display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; max-height: 54px; overflow-y: auto;">
+            <div class="att-absentee-list" style="display:flex; flex-wrap:wrap; gap:3px; margin-top:4px;">
               ${absenteeTiles}
+            </div>
+            <div class="att-mobile-absent-summary" style="display:none; margin-top:2px;">
+              <span class="badge badge-danger" style="font-size:0.55rem; padding: 1px 4px; border:none; text-transform:none;">🔴 ${absentees.length}</span>
             </div>
           `;
         } else {

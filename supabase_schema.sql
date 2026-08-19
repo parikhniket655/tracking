@@ -95,7 +95,7 @@ INSERT INTO users (id, name, email, role, vertical, avatar) VALUES
   ('junior_nandini', 'Nandini', 'nandini@wazir.in', 'junior', 'Editorials', 'NA'),
   ('junior_ishika', 'Ishika', 'ishika@wazir.in', 'junior', 'APEX', 'IS'),
   ('junior_akruti', 'Akruti', 'akruti@wazir.in', 'junior', 'ER', 'AK'),
-  ('junior_vishaka', 'Vishaka', 'vishaka@wazir.in', 'junior', 'CaseBook', 'VI'),
+  ('junior_vishakha', 'Vishakha', 'vishakha@wazir.in', 'junior', 'CaseBook', 'VI'),
   ('junior_harshvardhan', 'Harshvardhan', 'harshvardhan@wazir.in', 'junior', 'PR', 'HV'),
   ('junior_devanshi', 'Devanshi', 'devanshi@wazir.in', 'junior', 'Events', 'DE'),
   ('junior_simarpreet', 'Simarpreet', 'simarpreet@wazir.in', 'junior', 'Editorials', 'SI'),
@@ -143,12 +143,12 @@ INSERT INTO tasks (id, name, description, vertical, priority, deadline, "assigne
     'Low', 
     '2026-08-19T23:59:00', 
     'Wazir Senior', 
-    'junior_vishaka', 
+    'junior_vishakha', 
     'Not Started', 
     '[]'::jsonb, 
     'Review past templates for financial reporting structure.', 
     '2026-08-13T16:00:00',
-    '[{"date": "2026-08-13T16:00:00", "type": "create", "details": "Task created and assigned to Vishaka.", "user": "Wazir Senior"}]'::jsonb
+    '[{"date": "2026-08-13T16:00:00", "type": "create", "details": "Task created and assigned to Vishakha.", "user": "Wazir Senior"}]'::jsonb
   ),
   (
     'task_4', 
@@ -238,7 +238,7 @@ INSERT INTO attendance (id, "juniorId", date, status, "checkInTime") VALUES
   ('att_3', 'junior_nandini', '2026-08-17', 'Late', '2026-08-17T09:45:00'),
   ('att_4', 'junior_ishika', '2026-08-17', 'Present', '2026-08-17T09:10:00'),
   ('att_5', 'junior_akruti', '2026-08-17', 'Absent', NULL),
-  ('att_6', 'junior_vishaka', '2026-08-17', 'Present', '2026-08-17T09:02:00'),
+  ('att_6', 'junior_vishakha', '2026-08-17', 'Present', '2026-08-17T09:02:00'),
   ('att_7', 'junior_harshvardhan', '2026-08-17', 'Present', '2026-08-17T09:20:00'),
   ('att_8', 'junior_devanshi', '2026-08-17', 'Absent', NULL),
   ('att_9', 'junior_simarpreet', '2026-08-17', 'Present', '2026-08-17T09:08:00'),
@@ -248,5 +248,5 @@ INSERT INTO attendance (id, "juniorId", date, status, "checkInTime") VALUES
   ('att_11', 'junior_animesh', '2026-08-18', 'Present', '2026-08-18T09:12:00'),
   ('att_12', 'junior_nandini', '2026-08-18', 'Present', '2026-08-18T08:55:00'),
   ('att_13', 'junior_ishika', '2026-08-18', 'Late', '2026-08-18T09:40:00'),
-  ('att_14', 'junior_vishaka', '2026-08-18', 'Present', '2026-08-18T09:05:00')
+  ('att_14', 'junior_vishakha', '2026-08-18', 'Present', '2026-08-18T09:05:00')
 ON CONFLICT (id) DO NOTHING;

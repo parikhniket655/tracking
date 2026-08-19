@@ -973,6 +973,11 @@ body.theme-admin .task-card:hover {
   background-color: var(--border-color);
 }
 
+#admin-attendance-calendar-grid .calendar-day {
+  min-height: 140px;
+  aspect-ratio: unset;
+}
+
 .calendar-day.today {
   border-color: var(--color-primary);
   background-color: var(--color-primary-light);
@@ -1586,45 +1591,51 @@ body.theme-admin .progress-bar-fill {
 
   /* ── Attendance Calendar — Mobile Compact Mode ── */
   #admin-attendance-calendar-grid {
-    gap: 3px;
+    gap: 4px;
   }
 
   /* Shrink weekday labels */
   #admin-attendance-calendar-grid .calendar-weekday {
-    font-size: 0.6rem;
-    padding-bottom: 6px;
+    font-size: 0.65rem;
+    padding-bottom: 4px;
   }
 
-  /* Compact cells: fixed small square */
+  /* Compact cells for mobile */
   #admin-attendance-calendar-grid .calendar-day {
-    min-height: 0;
-    padding: 4px 3px;
+    min-height: 56px;
+    height: auto;
+    padding: 4px 2px;
     border-radius: 6px;
     gap: 2px;
     aspect-ratio: unset;
-    height: 72px;
     overflow: hidden;
   }
 
-  /* Day number tiny */
+  /* Day number */
   #admin-attendance-calendar-grid .calendar-day .day-number {
-    font-size: 0.65rem !important;
+    font-size: 0.7rem !important;
     margin-bottom: 0 !important;
   }
 
-  /* Hide the absentee name pills completely on mobile */
+  /* Hide individual name pills on mobile screen width */
   .att-absentee-list {
     display: none !important;
   }
 
-  /* Make the green "X Present" badge tiny and block */
+  /* Show mobile absentee summary pill */
+  .att-mobile-absent-summary {
+    display: block !important;
+  }
+
+  /* Compact present count badge on mobile */
   .att-present-badge {
     font-size: 0.55rem !important;
-    padding: 2px 3px !important;
-    margin-top: 2px !important;
+    padding: 1px 3px !important;
+    margin-top: 1px !important;
     border-radius: 4px !important;
-    line-height: 1.3;
-    white-space: nowrap;
+    line-height: 1.2;
+    white-space: nowrap !important;
+    text-transform: none !important;
   }
 
   /* Sunday label tiny */
