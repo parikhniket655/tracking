@@ -9,6 +9,9 @@ const WazirApp = (() => {
 
   // Initialize
   const init = () => {
+    // Purge legacy prototype placeholder sample tasks
+    WazirStore.clearSampleTasks();
+
     populateUserSwitcher();
     setupEventListeners();
     updateThemeClass();

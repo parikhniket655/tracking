@@ -103,12 +103,15 @@ const WazirStore = (() => {
         supabase.from('attendance').select('*')
       ]);
 
-      // Merge Cloud Tasks with Local Tasks
-      if (tasksRes.data && tasksRes.data.length > 0) {
-        tasks = tasksRes.data;
+      // Merge Cloud Tasks with Local Tasks (filtering out initial prototype sample tasks)
+      const cleanTasks = (taskList) => (taskList || []).filter(t => !['task_1', 'task_2', 'task_3', 'task_4', 'task_5', 'task_6'].includes(t.id));
+
+      if (tasksRes.data) {
+        tasks = cleanTasks(tasksRes.data);
         syncLocal('tasks', tasks);
-      } else if (tasks.length > 0) {
-        await supabase.from('tasks').upsert(tasks).catch(e => console.warn("Tasks sync error:", e.message));
+      } else {
+        tasks = cleanTasks(tasks);
+        syncLocal('tasks', tasks);
       }
 
       if (reqsRes.data && reqsRes.data.length > 0) {
@@ -303,6 +306,21 @@ const WazirStore = (() => {
         connected: usingSupabase,
         pollingActive: isPollingActive
       };
+    },
+    async clearSampleTasks() {
+      tasks = tasks.filter(t => !['task_1', 'task_2', 'task_3', 'task_4', 'task_5', 'task_6'].includes(t.id));
+      requests = requests.filter(r => r.id !== 'req_1');
+      notifications = notifications.filter(n => !['notif_1', 'notif_2', 'notif_3'].includes(n.id));
+      
+      syncLocal('tasks', tasks);
+      syncLocal('requests', requests);
+      syncLocal('notifications', notifications);
+
+      if (usingSupabase && supabase) {
+        await supabase.from('tasks').delete().in('id', ['task_1', 'task_2', 'task_3', 'task_4', 'task_5', 'task_6']).catch(e => {});
+        await supabase.from('requests').delete().eq('id', 'req_1').catch(e => {});
+      }
+      triggerUIRefresh();
     },
 
     // 2-Workspace Session Managers
