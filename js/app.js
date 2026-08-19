@@ -1937,10 +1937,10 @@ const WazirApp = (() => {
   };
 
   const copySupabaseSetupSQL = () => {
-    const sql = `ALTER TABLE users DISABLE ROW LEVEL SECURITY;\nALTER TABLE tasks DISABLE ROW LEVEL SECURITY;\nALTER TABLE requests DISABLE ROW LEVEL SECURITY;\nALTER TABLE notifications DISABLE ROW LEVEL SECURITY;\nALTER TABLE email_logs DISABLE ROW LEVEL SECURITY;\nALTER TABLE attendance DISABLE ROW LEVEL SECURITY;`;
+    const sql = `CREATE TABLE IF NOT EXISTS attendance (\n  id text PRIMARY KEY,\n  "juniorId" text NOT NULL,\n  date text NOT NULL,\n  status text NOT NULL,\n  "checkInTime" text\n);\n\nALTER TABLE users DISABLE ROW LEVEL SECURITY;\nALTER TABLE tasks DISABLE ROW LEVEL SECURITY;\nALTER TABLE requests DISABLE ROW LEVEL SECURITY;\nALTER TABLE notifications DISABLE ROW LEVEL SECURITY;\nALTER TABLE email_logs DISABLE ROW LEVEL SECURITY;\nALTER TABLE attendance DISABLE ROW LEVEL SECURITY;`;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(sql).then(() => {
-        alert("SQL Setup Command Copied to Clipboard!\n\nNext Step:\n1. Open your Supabase Dashboard -> SQL Editor\n2. Paste this SQL\n3. Click 'Run'\n\nThis grants 100% unrestricted cross-device sync across all phones & laptops!");
+        alert("SQL Setup Command Copied to Clipboard!\n\nNext Step:\n1. Open your Supabase Dashboard -> SQL Editor\n2. Paste this SQL\n3. Click 'Run'\n\nThis creates the attendance table and grants 100% unrestricted cross-device sync across all phones & laptops!");
       }).catch(() => {
         prompt("Copy this SQL command and run it in your Supabase SQL Editor:", sql);
       });
