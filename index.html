@@ -390,7 +390,24 @@
                 </div>
               </div>
 
-              <div style="margin-top: 30px;">
+              <!-- Cloud Sync Diagnostics & SQL Setup Box -->
+              <div style="margin-top: 24px; padding: 16px; background-color: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; color: var(--text-primary);">
+                  <span>🌐</span> Cross-Device Cloud Sync
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px;">
+                  If attendance logged on one device does not reflect on other devices, run this 1-click SQL in your <strong>Supabase SQL Editor</strong> to grant unrestricted cross-device access:
+                </div>
+                <pre style="background-color: var(--bg-card); padding: 8px 12px; border-radius: 6px; font-size: 0.7rem; color: var(--color-primary); overflow-x: auto; margin-bottom: 10px; font-family: monospace; border: 1px solid var(--border-color);">ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE tasks DISABLE ROW LEVEL SECURITY;
+ALTER TABLE requests DISABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
+ALTER TABLE email_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE attendance DISABLE ROW LEVEL SECURITY;</pre>
+                <button class="btn btn-secondary btn-sm" onclick="WazirApp.copySupabaseSetupSQL()" style="width: 100%; font-size: 0.75rem; padding: 6px 12px;">📋 Copy SQL Setup Command</button>
+              </div>
+
+              <div style="margin-top: 24px;">
                 <!-- Workspace Switcher Button -->
                 <button class="btn btn-primary" id="settings-switch-role-btn" onclick="WazirApp.handleSettingsRoleSwitch()" style="width: 100%; padding: 12px; font-weight: 700; margin-bottom: 12px;">Switch to Senior Workspace</button>
                 

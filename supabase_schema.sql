@@ -251,27 +251,13 @@ INSERT INTO attendance (id, "juniorId", date, status, "checkInTime") VALUES
   ('att_14', 'junior_vishakha', '2026-08-18', 'Present', '2026-08-18T09:05:00')
 ON CONFLICT (id) DO NOTHING;
 
--- Enable Row Level Security & Grant Public Read/Write Access
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE email_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Public access users" ON users;
-DROP POLICY IF EXISTS "Public access tasks" ON tasks;
-DROP POLICY IF EXISTS "Public access requests" ON requests;
-DROP POLICY IF EXISTS "Public access notifications" ON notifications;
-DROP POLICY IF EXISTS "Public access email_logs" ON email_logs;
-DROP POLICY IF EXISTS "Public access attendance" ON attendance;
-
-CREATE POLICY "Public access users" ON users FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public access tasks" ON tasks FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public access requests" ON requests FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public access notifications" ON notifications FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public access email_logs" ON email_logs FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public access attendance" ON attendance FOR ALL USING (true) WITH CHECK (true);
+-- Disable Row Level Security to grant 100% unrestricted cross-device Cloud Sync access
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE tasks DISABLE ROW LEVEL SECURITY;
+ALTER TABLE requests DISABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
+ALTER TABLE email_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE attendance DISABLE ROW LEVEL SECURITY;
 
 -- Enable Supabase Realtime Publication for instant cross-device updates
 ALTER PUBLICATION supabase_realtime ADD TABLE users, tasks, requests, notifications, email_logs, attendance;
