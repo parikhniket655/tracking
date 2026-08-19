@@ -1589,9 +1589,37 @@ body.theme-admin .progress-bar-fill {
     padding-bottom: 100px;
   }
 
+  /* Responsive View Header & Month Navigation Controls */
+  .view-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .month-nav-bar {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-top: 4px !important;
+  }
+
+  .month-nav-bar #admin-attendance-month-year {
+    min-width: 0 !important;
+    flex: 1 !important;
+    text-align: center !important;
+    font-size: 0.9rem !important;
+  }
+
+  .month-nav-bar button {
+    flex-shrink: 0 !important;
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
+  }
+
   /* ── Attendance Calendar — Mobile Compact Mode ── */
   #admin-attendance-calendar-grid {
-    gap: 4px;
+    gap: 3px;
   }
 
   /* Shrink weekday labels */
@@ -1602,18 +1630,18 @@ body.theme-admin .progress-bar-fill {
 
   /* Compact cells for mobile */
   #admin-attendance-calendar-grid .calendar-day {
-    min-height: 56px;
+    min-height: 52px;
     height: auto;
-    padding: 4px 2px;
+    padding: 3px 2px;
     border-radius: 6px;
-    gap: 2px;
+    gap: 1px;
     aspect-ratio: unset;
     overflow: hidden;
   }
 
   /* Day number */
   #admin-attendance-calendar-grid .calendar-day .day-number {
-    font-size: 0.7rem !important;
+    font-size: 0.65rem !important;
     margin-bottom: 0 !important;
   }
 
@@ -1629,13 +1657,16 @@ body.theme-admin .progress-bar-fill {
 
   /* Compact present count badge on mobile */
   .att-present-badge {
-    font-size: 0.55rem !important;
+    font-size: 0.5rem !important;
     padding: 1px 3px !important;
     margin-top: 1px !important;
-    border-radius: 4px !important;
-    line-height: 1.2;
+    border-radius: 3px !important;
+    line-height: 1.1 !important;
     white-space: nowrap !important;
     text-transform: none !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
   /* Sunday label tiny */
