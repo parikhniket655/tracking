@@ -89,10 +89,31 @@ const WazirStore = (() => {
 
       if (usersData && usersData.length > 0) {
         users = usersData;
-        syncLocal('users', users);
       } else {
         await supabase.from('users').upsert(users).catch(e => console.warn("Users auto-seed error:", e.message));
       }
+
+      // Auto-migrate legacy 'Vishaka' spelling from remote Supabase table
+      users = users.map(u => {
+        if (u.name === 'Vishaka' || u.id === 'junior_vishaka') {
+          return { ...u, id: 'junior_vishakha', name: 'Vishakha', email: 'vishakha@wazir.in' };
+        }
+        return u;
+      });
+
+      if (usingSupabase && supabase) {
+        await supabase.from('users').upsert({
+          id: 'junior_vishakha',
+          name: 'Vishakha',
+          email: 'vishakha@wazir.in',
+          role: 'junior',
+          vertical: 'CaseBook',
+          avatar: 'VI'
+        }).catch(e => {});
+        await supabase.from('users').delete().eq('id', 'junior_vishaka').catch(e => {});
+      }
+
+      syncLocal('users', users);
 
       // Fetch remainder tables from Supabase Cloud
       const [tasksRes, reqsRes, notifsRes, emailRes, attRes] = await Promise.all([
@@ -400,13 +421,16 @@ const WazirStore = (() => {
       }
     },
     getUsers() {
-      return users;
+      return users.map(u => (u.name === 'Vishaka' || u.id === 'junior_vishaka') ? { ...u, id: 'junior_vishakha', name: 'Vishakha', email: 'vishakha@wazir.in' } : u);
     },
     getJuniors() {
-      return users.filter(u => u.role === 'junior');
+      return this.getUsers().filter(u => u.role === 'junior');
     },
     getUser(id) {
-      return users.find(u => u.id === id);
+      if (id === 'junior_vishaka' || id === 'junior_vishakha') {
+        return { id: 'junior_vishakha', name: 'Vishakha', email: 'vishakha@wazir.in', role: 'junior', vertical: 'CaseBook', avatar: 'VI' };
+      }
+      return this.getUsers().find(u => u.id === id);
     },
 
     // Tasks Management
