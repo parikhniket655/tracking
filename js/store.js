@@ -67,8 +67,14 @@ const WazirStore = (() => {
       const { data: usersData, error: usersErr } = await supabase.from('users').select('*');
       if (usersErr) throw usersErr;
 
-      users = (usersData && usersData.length > 0) ? usersData : DEFAULT_USERS;
       usingSupabase = true;
+
+      if (usersData && usersData.length > 0) {
+        users = usersData;
+      } else {
+        users = DEFAULT_USERS;
+        await supabase.from('users').upsert(DEFAULT_USERS).catch(e => console.warn("Users auto-seed error:", e.message));
+      }
 
       // Fetch remainder tables
       const [tasksRes, reqsRes, notifsRes, emailRes, attRes] = await Promise.all([
@@ -79,16 +85,33 @@ const WazirStore = (() => {
         supabase.from('attendance').select('*')
       ]);
 
-      if (tasksRes.data) tasks = tasksRes.data;
-      if (reqsRes.data) requests = reqsRes.data;
-      if (notifsRes.data) notifications = notifsRes.data;
-      if (emailRes.data) emailLogs = emailRes.data;
-      if (attRes.data) attendance = attRes.data;
+      if (tasksRes.data && tasksRes.data.length > 0) {
+        tasks = tasksRes.data;
+      } else {
+        tasks = DEFAULT_TASKS;
+        await supabase.from('tasks').upsert(DEFAULT_TASKS).catch(e => console.warn("Tasks auto-seed error:", e.message));
+      }
 
-      console.log("Connected to Supabase. Loaded", tasks.length, "tasks and", attendance.length, "attendance records.");
+      if (reqsRes.data && reqsRes.data.length > 0) requests = reqsRes.data;
+      if (notifsRes.data && notifsRes.data.length > 0) notifications = notifsRes.data;
+      if (emailRes.data && emailRes.data.length > 0) emailLogs = emailRes.data;
 
-      // Setup Realtime subscriptions
+      if (attRes.error) {
+        console.warn("Attendance table error on Supabase:", attRes.error.message);
+        const val = localStorage.getItem('wazir_attendance');
+        attendance = val ? JSON.parse(val) : DEFAULT_ATTENDANCE;
+      } else if (attRes.data && attRes.data.length > 0) {
+        attendance = attRes.data;
+      } else {
+        attendance = DEFAULT_ATTENDANCE;
+        await supabase.from('attendance').upsert(DEFAULT_ATTENDANCE).catch(e => console.warn("Attendance auto-seed error:", e.message));
+      }
+
+      console.log("Connected to Supabase Cloud. Loaded", tasks.length, "tasks and", attendance.length, "attendance records.");
+
+      // Setup Realtime subscriptions and 4-second cross-device polling loop
       setupRealtimeSubscriptions();
+      startPolling();
 
     } catch (err) {
       console.warn("Supabase connection failed or tables not initialized. Error:", err.message);
@@ -180,6 +203,42 @@ const WazirStore = (() => {
       .subscribe();
   };
 
+  let isPollingActive = false;
+  const startPolling = () => {
+    if (isPollingActive) return;
+    isPollingActive = true;
+
+    setInterval(async () => {
+      if (!usingSupabase || !supabase) return;
+
+      try {
+        // Poll Attendance Table
+        const { data: latestAtt, error: attErr } = await supabase.from('attendance').select('*');
+        if (!attErr && latestAtt && latestAtt.length > 0) {
+          if (JSON.stringify(latestAtt) !== JSON.stringify(attendance)) {
+            console.log("Cloud Sync: Remote attendance changes detected.");
+            attendance = latestAtt;
+            localStorage.setItem('wazir_attendance', JSON.stringify(attendance));
+            triggerUIRefresh();
+          }
+        }
+
+        // Poll Tasks Table
+        const { data: latestTasks, error: taskErr } = await supabase.from('tasks').select('*');
+        if (!taskErr && latestTasks && latestTasks.length > 0) {
+          if (JSON.stringify(latestTasks) !== JSON.stringify(tasks)) {
+            console.log("Cloud Sync: Remote task changes detected.");
+            tasks = latestTasks;
+            localStorage.setItem('wazir_tasks', JSON.stringify(tasks));
+            triggerUIRefresh();
+          }
+        }
+      } catch (err) {
+        // Silent catch for background poll
+      }
+    }, 4000); // 4-second polling interval for real-time responsiveness
+  };
+
   // Triggers visual refresh of active view in app.js on database change
   const triggerUIRefresh = () => {
     if (window.WazirApp && typeof window.WazirApp.refreshCurrentView === 'function') {
@@ -198,6 +257,12 @@ const WazirStore = (() => {
     initSupabase,
     isUsingSupabase() {
       return usingSupabase;
+    },
+    getSupabaseStatus() {
+      return {
+        connected: usingSupabase,
+        pollingActive: isPollingActive
+      };
     },
 
     // 2-Workspace Session Managers
@@ -523,10 +588,22 @@ const WazirStore = (() => {
         attendance.push(newLog);
       }
 
+      // Always update local cache & localStorage
       syncLocal('attendance', attendance);
+      localStorage.setItem('wazir_attendance', JSON.stringify(attendance));
 
-      if (usingSupabase) {
-        await supabase.from('attendance').upsert([newLog]);
+      // Push to Supabase Cloud if available
+      if (usingSupabase && supabase) {
+        try {
+          const { error } = await supabase.from('attendance').upsert([newLog]);
+          if (error) {
+            console.warn("Supabase attendance upsert warning:", error.message);
+          } else {
+            console.log("Successfully synced attendance record to Supabase Cloud:", newLog);
+          }
+        } catch (err) {
+          console.error("Supabase attendance sync error:", err);
+        }
       }
       
       return newLog;
